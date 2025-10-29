@@ -3,7 +3,7 @@ CREATE SCHEMA CheckPoint;
 USE CheckPoint;
 
 
-create table User (
+create table appUser (
 	userID char(12) not NULL,
     username varchar(20) not NULL default 'big money baller',
     userJSON json,
@@ -33,7 +33,7 @@ DELIMITER $$
     
     
     SELECT userJSON into userProjectsJSON
-    FROM User AS u
+    FROM appUser AS u
     WHERE u.userID = userIDvar;
 	
 	SELECT JSON_OBJECT(
@@ -48,7 +48,7 @@ DELIMITER $$
         )
 	)
     INTO endJSON
-	FROM User AS u
+	FROM appUser AS u
     JOIN JSON_TABLE(
 		userProjectsJSON,
 		'$.projects.projectID[*]' COLUMNS (id CHAR(12) PATH '$')
@@ -83,28 +83,43 @@ BEGIN
 	DECLARE userJSONData JSON;
 	DECLARE i INT default 0;
 	DECLARE j INT default 0;
-
+	DECLARE usersWithAccess INT DEFAULT 0;
+    DECLARE numberOfProjects INT DEFAULT 0;
+    
+    
     SELECT projectJSON
     INTO projectData
     FROM Project
     WHERE ProjectID = projectIDToDelete;
+   IF projectData IS NULL THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Project not found — cannot delete.';
+    END IF;
     
-    SELECT JSON_LENGTH(projectData, '$.users') as usersWithAcess;
+    
+    SELECT JSON_LENGTH(projectData, '$.users') INTO usersWithAccess;
 	all_users: LOOP
-		IF i >= usersWithAcess THEN
+		
+       
+        
+        IF i >= usersWithAccess OR usersWithAccess IS NULL THEN
             LEAVE all_users; 
 		END IF;
 		
-        SELECT JSON_EXTRACT(projectData, CONCAT('$.users[', i, '].userID'))
+        
+        
+        SELECT JSON_UNQUOTE(JSON_EXTRACT(projectData, CONCAT('$.users[', i, '].userID')))
 		INTO userIDvar;
         SELECT userJSON INTO userJSONData
-        FROM User as u
+        FROM appUser as u
         WHERE u.userID = userIDvar;
         
-        SELECT JSON_LENGTH(userJSON, '$.projects.projectID') as numberOfProjects;
-        
+        SELECT JSON_LENGTH(userJSONData, '$.projects') INTO numberOfProjects;
+		
+        SET j = 0;
+
         remove_obj: LOOP
-			 IF j >= numberOfProjects THEN
+			 IF j >= numberOfProjects OR numberOfProjects IS NULL THEN
                 LEAVE remove_obj;
             END IF;
 
@@ -113,9 +128,10 @@ BEGIN
 
             IF currentProjectID = projectIDToDelete THEN
                 SET userJSONData = JSON_REMOVE(userJSONData, CONCAT('$.projects[', j, ']'));
-                UPDATE User SET userJSON = userJSONData WHERE userID = userIDvar;
+                UPDATE appUser SET userJSON = userJSONData WHERE userID = userIDvar;
                 LEAVE remove_obj;
             END IF;
+            
 			SET j = j + 1;
 
         END LOOP remove_obj;
@@ -124,11 +140,51 @@ BEGIN
         
     END LOOP all_users;
 
-	DELETE from project as projdel
-    where projdel.projectID = projectIDToDelete;
+	DELETE FROM Project
+	WHERE ProjectID = projectIDToDelete;
+
 END$$
  
 DELIMITER ;
 
  
+ INSERT INTO appUser VALUES 
+('000000000001', 'Big dawg', 
+'{
+        "userID": "000000000001",
+        "projects": [
+            {
+                "projectID": "000000000101",
+                "projectName": "HamburgerHelper",
+                "permissionLevel": "r"
+            }
+        ],
+        "userName": "Big dawg"
+    }');
 
+INSERT INTO Project VALUES
+('000000000101', 'HamburgerHelper', '000000000001', 
+'{
+
+"projectName": "HamburgerHelper",
+    "users": [
+        {
+            "userID": "000000000001",
+            "permissionLevel": "r"
+        },
+        {
+            "userID": "000000000002",
+            "permissionLevel": "w"
+        },
+        {
+            "userID": "000000000003",
+            "permissionLevel": "o"
+        }
+    ]
+  }');
+
+select compileUserJSON('000000000001');
+CALL deleteProject('000000000101');
+select userJSON
+from appUser
+where userID = '000000000001'
