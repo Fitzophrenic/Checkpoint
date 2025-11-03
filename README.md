@@ -21,6 +21,7 @@ To set up the **Checkpoint** app, all we have right now is the front-end portion
 - Once in the app, make a board for yourself and then click on it.
 - Then, once in a board, make a notes section.
 - Then type what you would like. It does not save yet, as that is set up for SQL. 
+*If you have issues, put the extra java files in a new folder
 
 ## SQL Instructions:
 - install mySQL workbench with all add-ons from https://dev.mysql.com/downloads/installer/
