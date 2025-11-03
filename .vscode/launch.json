@@ -1,0 +1,12 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Run JavaFX App",
+      "request": "launch",
+      "mainClass": "CheckpointFE",
+      "vmArgs": "--module-path \"C:/Users/ethan/Downloads/openjfx-17.0.17_windows-x64_bin-sdk/javafx-sdk-17.0.17/lib\" --add-modules javafx.controls,javafx.fxml"
+    }
+  ]
+}
