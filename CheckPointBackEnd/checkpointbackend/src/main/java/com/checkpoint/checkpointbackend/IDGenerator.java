@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class IDGenerator {
-    private static String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    private final static String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
     public static String generateID(){
 

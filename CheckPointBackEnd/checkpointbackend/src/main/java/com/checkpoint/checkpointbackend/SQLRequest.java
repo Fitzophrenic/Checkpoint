@@ -21,7 +21,7 @@ public class SQLRequest {
         private Connection conn = null;
     
         @PostConstruct
-        private void setConnection() {
+        private void testConnection() {
             try {
                 conn = dataSource.getConnection();
                 System.out.println("sucessfully connected and running");
@@ -30,7 +30,10 @@ public class SQLRequest {
             } catch (SQLException e) {
                 System.err.println("Database connection failed: " + e.getMessage());
             }
+        }
 
+        public Connection getConnection() {
+            return conn;
         }
 
         public void createUser(String userName) {
@@ -61,13 +64,13 @@ public class SQLRequest {
             String userJson = String.format(
             """
             {
-                "userID": "%s"
+                "userID": "%s",
                 "userName": "%s"
             }
             """, userID, userName);
             try (PreparedStatement stmt = conn.prepareStatement(sqlRequest)){
-                stmt.setString(1, userID);           // project ID
-                stmt.setString(2, userName);         // project name
+                stmt.setString(1, userID);           // userID
+                stmt.setString(2, userName);         // username
                 stmt.setString(3, userJson); 
                 int rows = stmt.executeUpdate();
                 System.out.println("Inserted " + rows + " row(s) into appUser table.");
@@ -105,7 +108,7 @@ public class SQLRequest {
             String projectJson = String.format(
             """
             {
-                "projectID": "%s"
+                "projectID": "%s",
                 "projectName": "%s",
                 "users": [
                     {"userID": "%s", "permissionLevel": "o"}
@@ -129,15 +132,63 @@ public class SQLRequest {
         }
 
         public void deleteProject(String projectID) {
-            String sqlRequest = "CALL deleteProject(?)";
-            try (CallableStatement  stmt = conn.prepareStatement(sqlRequest)){
+            String sqlRequest = "{CALL deleteProject(?)}";
+            try (CallableStatement  stmt = conn.prepareCall(sqlRequest)){
                 stmt.setString(1, projectID); 
-                int rows = stmt.executeUpdate();
-                System.out.println("Inserted " + rows + " row(s) into Project table.");
+                stmt.execute();
+                System.out.println("Deleted" + projectID + "from Project table.");
             } catch (SQLException e) {
                 System.err.println("Database operation failed: " + e.getMessage());
             }
+        }
 
+        public void removeUserFromProject(String projectID, String userID) {
+            String sqlRequest = "{CALL removeUserFromProject(?, ?)}";
+            try (CallableStatement  stmt = conn.prepareCall(sqlRequest)){
+                stmt.setString(1, projectID); 
+                stmt.setString(2, userID); 
+
+                stmt.execute();
+                System.out.println("Removed" +userID +"from" + projectID + ".");
+            } catch (SQLException e) {
+                System.err.println("Database operation failed: " + e.getMessage());
+            }
+        }
+
+        public void addUserToProject(String projectID, String userID, String permLevel) {
+            if (!(permLevel.equals("r") || permLevel.equals("w") || permLevel.equals("o")) ){
+                System.out.println("invalid permmissionLevel");
+                return;
+            }
+
+            String sqlRequest = "{CALL addUserToProject(?, ?, ?)}";
+            try (CallableStatement  stmt = conn.prepareCall(sqlRequest)){
+                stmt.setString(1, projectID);
+                stmt.setString(2, userID);
+                stmt.setString(3, permLevel);
+                stmt.execute();
+                System.out.println("added" +userID +" to  "+ projectID +" with permission level "+ permLevel+".");
+            } catch (SQLException e) {
+                System.err.println("Database operation failed: " + e.getMessage());
+            }
+        }
+
+        public void changePermissionLevel(String projectID, String userID, String permLevel) {
+            if (!(permLevel.equals("r") || permLevel.equals("w") || permLevel.equals("o")) ){
+                System.out.println("invalid permmissionLevel");
+                return;
+            }
+
+            String sqlRequest = "{CALL changePermissionLevel(?, ?, ?)}";
+            try (CallableStatement  stmt = conn.prepareCall(sqlRequest)){
+                stmt.setString(1, projectID);
+                stmt.setString(2, userID);
+                stmt.setString(3, permLevel);
+                stmt.execute();
+                System.out.println("changed" +userID +"permission level in" + projectID + "to "+ permLevel+".");
+            } catch (SQLException e) {
+                System.err.println("Database operation failed: " + e.getMessage());
+            }
         }
 
 }
