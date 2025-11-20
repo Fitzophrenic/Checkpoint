@@ -5,11 +5,15 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
+import java.util.Map;
 
 import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.annotation.PostConstruct;
 
@@ -22,7 +26,8 @@ public class SQLRequest {
 
         @Autowired
         JSONProjectConverter projectConverter;
-
+        @Autowired
+        JSONProjectBoardConverter projectBoardConverter;
         @PostConstruct
         private void testConnection() {
             try {
@@ -82,7 +87,7 @@ public class SQLRequest {
             }
         }
 
-        public void createProject(String projectName, String ownerID) {
+        public String createProject(String projectName, String ownerID) {
             String sqlCheckIfIDExist = "SELECT COUNT(*) FROM Project WHERE projectID = ?";
             String projectID = IDGenerator.generateID();
             try (PreparedStatement stmt = conn.prepareStatement(sqlCheckIfIDExist)){
@@ -103,23 +108,28 @@ public class SQLRequest {
                 System.err.println("Database operation failed: " + e.getMessage());
             }
             createProject(projectID, projectName, ownerID);
+            return projectID;
         }
 
         private void createProject(String projectID, String projectName, String ownerID){
-            String sqlRequest = "INSERT INTO Project VALUES (?, ?, ?, ?, ?)";
+            String sqlRequest = "INSERT INTO Project (projectID, projectName, OwnerID, projectJSON, boardsJSON) VALUES (?, ?, ?, ?, ?)";
 
+            // String projectJson = String.format(
+            // """
+            // {
+            //     "projectID": "%s",
+            //     "projectName": "%s",
+            //     "users": [
+            //         {"userID": "%s", "permissionLevel": "o"}
+            //     ]
+            // }
+            // """, projectID, projectName, ownerID);
+            
             String projectJson = String.format(
-            """
-            {
-                "projectID": "%s",
-                "projectName": "%s",
-                "users": [
-                    {"userID": "%s", "permissionLevel": "o"}
-                ]
-            }
-            """, projectID, projectName, ownerID);
-
-            String boardsJSON = "{}";
+                "{\"projectID\":\"%s\",\"projectName\":\"%s\",\"users\":[{\"userID\":\"%s\",\"permissionLevel\":\"o\"}]}",
+                projectID, projectName, ownerID
+            );
+            String boardsJSON = "{ \"sections\": [] }";
 
             try (PreparedStatement stmt = conn.prepareStatement(sqlRequest)){
                 stmt.setString(1, projectID);           // project ID
@@ -219,7 +229,111 @@ public class SQLRequest {
             catch (SQLException e) {
                 System.err.println("Database operation failed: " + e.getMessage());
             }
-
             return null;
         }
+
+        public Map<String,Object> requestProjectBoard(String projectID) {
+            String sql = "SELECT boardsJSON FROM Project WHERE projectID = ?";
+            ObjectMapper mapper = new ObjectMapper();
+
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setString(1, projectID);
+
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (!rs.next()) return Map.of("sections", List.of());
+
+                    String jsonStr = rs.getString("boardsJSON");
+                    if (jsonStr == null || jsonStr.isBlank()) return Map.of("sections", List.of());
+
+                    return mapper.readValue(jsonStr, Map.class);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                return Map.of("error", e.getMessage());
+            }
+        }
+    public Map<String,Object> requestUserJson(String userID) {
+        String sql = "SELECT userJSON FROM appUser WHERE userID = ?";
+        ObjectMapper mapper = new ObjectMapper();
+
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, userID);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (!rs.next()) return Map.of(); // no user found
+
+                String jsonStr = rs.getString("userJSON");
+                if (jsonStr == null || jsonStr.isBlank()) return Map.of();
+
+                return mapper.readValue(
+                    jsonStr,
+                    new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {}
+                    );
+                }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Map.of("error", e.getMessage());
+        }
+    }
+    public void addBoardToProject(String userID /*for checking permission level */, String projectID, String boardName, String content) {
+        if(!(checkPermissionLevel(projectID, userID).equals("o") || checkPermissionLevel(projectID, userID).equals("w"))) {
+            return;
+        }
+        String sql =
+            "UPDATE Project " +
+            "SET boardsJSON = JSON_ARRAY_APPEND( " +
+            "    boardsJSON, " +
+            "    '$.sections', " +
+            "    JSON_OBJECT('boardName', ?, 'content', ?) " +
+            ") " +
+            "WHERE projectID = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, boardName);
+            stmt.setString(2, content); // prolly going to be nothing most the time
+            stmt.setString(3, projectID);
+            stmt.executeUpdate();
+        } catch (SQLException ex) {
+        }
+    }
+    public void updateBoardSection(String userID /*for checking permission level */, String projectID, String boardName, String content) {
+        if(!(checkPermissionLevel(projectID, userID).equals("o") || checkPermissionLevel(projectID, userID).equals("w"))) {
+            return;
+        }
+        String sqlRequest = "SELECT boardsJSON FROM Project WHERE projectID = ?";
+        try (CallableStatement stmt = conn.prepareCall(sqlRequest)) {
+                stmt.setString(1, projectID);
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if(!rs.next()) {
+                        return;
+                    }
+                    String json = rs.getString("projectJSON");
+                    JSONProjectBoard projectBoard = projectBoardConverter.convertToEntityAttribute(json);
+                    if (projectBoard.getSections() == null) {
+                        return;
+                    }
+                    int index = -1;
+                    List<JSONProjectBoardSection> sections = projectBoard.getSections();
+                    for (int i = 0; i < sections.size(); i++) {
+                        if (sections.get(i).getBoardName().equals(boardName)) {
+                            index = i;
+                            break;
+                        }
+                    }
+                    String sqlUpdate =
+                        "UPDATE Project " +
+                        "SET boardsJSON = JSON_SET(boardsJSON, CONCAT('$.sections[', ?, '].content'), ?) " +
+                        "WHERE projectID = ?";
+
+                    try (PreparedStatement updateStmt = conn.prepareStatement(sqlUpdate)) {
+                        updateStmt.setInt(1, index);
+                        updateStmt.setString(2, content);
+                        updateStmt.setString(3, projectID);
+                        updateStmt.executeUpdate();
+                    }
+                }
+            }
+            catch (SQLException e) {
+                System.err.println("Database operation failed: " + e.getMessage());
+            }
+    }
 }
