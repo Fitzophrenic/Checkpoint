@@ -44,7 +44,7 @@ public class SQLRequest {
             return conn;
         }
 
-        public void createUser(String userName) {
+        public String createUser(String userName) {
             String sqlCheckIfIDExist = "SELECT COUNT(*) FROM appUser WHERE userID = ?";
             String userID = IDGenerator.generateID();
             try (PreparedStatement stmt = conn.prepareStatement(sqlCheckIfIDExist)){
@@ -65,6 +65,7 @@ public class SQLRequest {
                 System.err.println("Database operation failed: " + e.getMessage());
             }
             createUser(userID, userName);
+            return userID;
         }
 
         private void createUser(String userID, String userName){

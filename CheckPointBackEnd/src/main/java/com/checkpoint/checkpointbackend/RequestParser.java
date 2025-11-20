@@ -52,13 +52,18 @@ public class RequestParser {
                 }
                 
                 case "create-user" -> { //create-user
-                    sqlRequest.createUser(userName);
+                    String id = sqlRequest.createUser(userName);
+                    Map<String, Object> response = new HashMap<>();
+                    response.put("userID", id);
+                    response.put("userName", userName);
+                    return ResponseEntity.ok(response);
                 }
                     
                 case "create-project" -> { //create-project: projectName
                     String id = sqlRequest.createProject(arg1, userID);
                     Map<String, Object> response = new HashMap<>();
-                    response.put("id", id);
+                    response.put("projectID", id);
+                    response.put("projectName", arg1);
                     return ResponseEntity.ok(response);
                 }
                 case "delete-project" -> { //delete-project
@@ -106,6 +111,8 @@ public class RequestParser {
 
 
         }
-        return null;
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "command completed sucessfully");
+        return ResponseEntity.ok(response);
     }
 }
