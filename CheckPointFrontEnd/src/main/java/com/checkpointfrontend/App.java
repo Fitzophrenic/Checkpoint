@@ -23,9 +23,13 @@ public class App extends Application {
     private ListView<String> sectionsList;
     private TextArea notesArea;
     private ListView<String> boardsList;
+    private final String userID = "abcdefghijkl"; // change later when login has it
+
+    private static httpClientCheckPoint httpClient =  new httpClientCheckPoint();
 
     @Override
     public void start(Stage stage) {
+
         stage.setTitle("Checkpoint");
 
         // --- Top Menu ---
@@ -82,6 +86,7 @@ public class App extends Application {
         // --- Event Handling ---
         boardsList.setOnMouseClicked(e -> {
             String board = boardsList.getSelectionModel().getSelectedItem();
+            System.out.print("1"); //opens a board / project
             if (board != null) {
                 sectionsList.getItems().clear();
                 notesArea.clear();
@@ -93,22 +98,27 @@ public class App extends Application {
 
         sectionsList.setOnMouseClicked(e -> {
             String section = sectionsList.getSelectionModel().getSelectedItem();
+            System.out.print("2"); // open new section
             if (section != null) {
                 notesArea.setPromptText("Notes for: " + section);
                 notesArea.clear();
+                
             }
         });
 
         addBoardBtn.setOnAction(e -> {
             String boardName = newBoardField.getText().trim();
+            System.out.print("3"); //create board
             if (!boardName.isEmpty() && !boardsList.getItems().contains(boardName)) {
                 boardsList.getItems().add(boardName);
                 newBoardField.clear();
+                httpClient.createProject(boardName, userID); //track
             }
         });
 
         addSectionButton.setOnAction(e -> {
             String sectionName = newSectionField.getText().trim();
+            System.out.print("4"); // create new section
             if (!sectionName.isEmpty() && !sectionsList.getItems().contains(sectionName)) {
                 sectionsList.getItems().add(sectionName);
                 newSectionField.clear();
@@ -117,14 +127,7 @@ public class App extends Application {
     }
 
     public static void main(String[] args)  {
-        httpClientCheckPoint homindisan = new httpClientCheckPoint();
-        try {
-            homindisan.http();
-            System.out.println("Sdadjis");
-
-        } catch (Exception ex) {
-            System.err.println("asijdjis");
-        }
+        
         launch();
         
     }
