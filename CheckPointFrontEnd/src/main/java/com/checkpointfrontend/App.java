@@ -1,6 +1,14 @@
 package com.checkpointfrontend;
 
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -23,15 +31,19 @@ public class App extends Application {
     private ListView<String> sectionsList;
     private TextArea notesArea;
     private ListView<String> boardsList;
-    private final String userID = "abcdefghijkl"; // change later when login has it
-
-    private static httpClientCheckPoint httpClient =  new httpClientCheckPoint();
-
+    private String userID = "abcdefghijkl"; // change later when login has it
+    private String currentProjectID = "123456789ABC";
+    private static final httpClientCheckPoint httpClient =  new httpClientCheckPoint();
+    private final Map<String, String> userProjects = new HashMap<>();
+    private final List<Map<String, Object>> sections = new ArrayList<>();
     @Override
     public void start(Stage stage) {
 
         stage.setTitle("Checkpoint");
 
+        // --- create temp user for testing ---
+        setupUser("monkey dave");
+       
         // --- Top Menu ---
         Button homeButton = new Button("Checkpoint");
         homeButton.getStyleClass().add("home-button"); // CSS class
@@ -84,48 +96,91 @@ public class App extends Application {
         stage.show();
 
         // --- Event Handling ---
-        boardsList.setOnMouseClicked(e -> {
+        boardsList.setOnMouseClicked(e -> {//opens a board / project
             String board = boardsList.getSelectionModel().getSelectedItem();
-            System.out.print("1"); //opens a board / project
             if (board != null) {
                 sectionsList.getItems().clear();
                 notesArea.clear();
                 mainLayout.setCenter(docSplitPane);
+                currentProjectID = userProjects.get(board);
+                populateSections();
             }
         });
 
-        homeButton.setOnAction(e -> mainLayout.setCenter(homeScreen));
+        homeButton.setOnAction(e -> {
+            mainLayout.setCenter(homeScreen);
+        });
 
-        sectionsList.setOnMouseClicked(e -> {
+        sectionsList.setOnMouseClicked(e -> {// open new section
             String section = sectionsList.getSelectionModel().getSelectedItem();
-            System.out.print("2"); // open new section
             if (section != null) {
                 notesArea.setPromptText("Notes for: " + section);
                 notesArea.clear();
+            }
+        });
+
+        addBoardBtn.setOnAction(e -> {//create board
+            String boardName = newBoardField.getText().trim();
+            if (!boardName.isEmpty() && !boardsList.getItems().contains(boardName)) {
+                boardsList.getItems().add(boardName);
+                newBoardField.clear();
+                Map<String, Object> idRes = httpClient.createProject(boardName, userID); //track
+                String projectIDtmp = (String) idRes.get("projectID");
+                userProjects.put(boardName, projectIDtmp);
                 
             }
         });
 
-        addBoardBtn.setOnAction(e -> {
-            String boardName = newBoardField.getText().trim();
-            System.out.print("3"); //create board
-            if (!boardName.isEmpty() && !boardsList.getItems().contains(boardName)) {
-                boardsList.getItems().add(boardName);
-                newBoardField.clear();
-                httpClient.createProject(boardName, userID); //track
-            }
-        });
-
-        addSectionButton.setOnAction(e -> {
+        addSectionButton.setOnAction(e -> { // create new section
             String sectionName = newSectionField.getText().trim();
-            System.out.print("4"); // create new section
             if (!sectionName.isEmpty() && !sectionsList.getItems().contains(sectionName)) {
                 sectionsList.getItems().add(sectionName);
                 newSectionField.clear();
+                httpClient.addBoardToProject(userID, currentProjectID, sectionName, "");
             }
+     
         });
     }
+    @SuppressWarnings("unchecked")
+    private void populateSections() {
+        Map<String, Object> boardMap = httpClient.getProjectBoards(currentProjectID);
+        Object obj = boardMap.get("sections");
+        if(!(obj instanceof ArrayList<?>)) {
+            return;
+        }
+        ArrayList<?> boardContent = (ArrayList<?>) obj;
+        for (Object item : boardContent) {
+            if (item instanceof Map<?, ?>) {
 
+                sections.add((Map<String, Object>) item);
+            } else {
+            }
+        }
+        for (Map<String, Object> section : sections) {
+            String boardName = section.get("boardName") != null ? section.get("boardName").toString() : "";
+            String content = section.get("content") != null ? section.get("content").toString() : "";
+            sectionsList.getItems().add(boardName);
+
+            System.out.println("Board: " + boardName + ", Content: " + content);
+        }
+        System.out.println(boardContent);
+    }
+    private void setupUser(String userName) {
+        File userFile = new File("user_info.txt");
+        if(userFile.exists()) {
+            System.out.println("user already exists");
+            return;
+        }
+        Map<String,Object> userInfo = httpClient.createUser(userName);
+        userID = (String) userInfo.get("userID");
+        httpClient.requestUserJson(userID);
+        try(FileWriter fw = new FileWriter(userFile)) {
+            fw.write(String.format("userID: %s%n",userID));
+            fw.write(String.format("userName: %s",userName));
+
+        } catch (IOException ex) {
+        }
+    }
     public static void main(String[] args)  {
         
         launch();

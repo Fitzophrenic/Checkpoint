@@ -1,2 +1,2 @@
 userID: abcdefghijkl 
- create-project: vnc
+ create-project: afw
