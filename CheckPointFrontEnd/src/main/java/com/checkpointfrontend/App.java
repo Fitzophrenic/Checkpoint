@@ -1,13 +1,17 @@
 package com.checkpointfrontend;
 
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import javafx.application.Application;
 import javafx.scene.Scene;
@@ -33,9 +37,11 @@ public class App extends Application {
     private ListView<String> boardsList;
     private String userID = "abcdefghijkl"; // change later when login has it
     private String currentProjectID = "123456789ABC";
+    private String currentProjectSection = "";
     private static final httpClientCheckPoint httpClient =  new httpClientCheckPoint();
     private final Map<String, String> userProjects = new HashMap<>();
     private final List<Map<String, Object>> sections = new ArrayList<>();
+    ObjectMapper mapper = new ObjectMapper();
     @Override
     public void start(Stage stage) {
 
@@ -109,14 +115,50 @@ public class App extends Application {
 
         homeButton.setOnAction(e -> {
             mainLayout.setCenter(homeScreen);
+            String section = sectionsList.getSelectionModel().getSelectedItem();
+            for (Map<String, Object> sectio : sections) {
+
+                if (sectio.get("boardName").equals(section)) {
+                    String text = notesArea.getText();
+                    httpClient.updateBoardSection(userID, currentProjectID, currentProjectSection, text);
+
+                    sectio.put("content", text);
+
+                    break;
+                }
+            }
+            currentProjectSection = "";
         });
 
         sectionsList.setOnMouseClicked(e -> {// open new section
             String section = sectionsList.getSelectionModel().getSelectedItem();
-            if (section != null) {
-                notesArea.setPromptText("Notes for: " + section);
-                notesArea.clear();
+            if (section == null || section.equals(currentProjectSection)) {
+                return;
             }
+            for (Map<String, Object> sectio : sections) {
+
+                if (sectio.get("boardName").equals(currentProjectSection)) {
+                    String text = notesArea.getText();
+                    
+
+                    httpClient.updateBoardSection(userID, currentProjectID, currentProjectSection, text);
+
+                    sectio.put("content", text);
+
+                    break;
+                }
+            }
+
+            notesArea.setPromptText("Notes for: " + section);
+            notesArea.clear();
+            String content =httpClient.getBoardSection(currentProjectID, section).get("content").toString();
+            String multiLineContent = content.replace("\\n", "\n");
+            if (multiLineContent.startsWith("\"") && multiLineContent.endsWith("\"")) {
+                multiLineContent = multiLineContent.substring(1, multiLineContent.length() - 1);
+            }
+            notesArea.setText(multiLineContent);
+            // notesArea.setText(content);
+            currentProjectSection = section;
         });
 
         addBoardBtn.setOnAction(e -> {//create board
@@ -130,19 +172,23 @@ public class App extends Application {
                 
             }
         });
-
+       
         addSectionButton.setOnAction(e -> { // create new section
             String sectionName = newSectionField.getText().trim();
+            Map<String, Object> mapTmpOnly = new HashMap<>();
             if (!sectionName.isEmpty() && !sectionsList.getItems().contains(sectionName)) {
                 sectionsList.getItems().add(sectionName);
                 newSectionField.clear();
                 httpClient.addBoardToProject(userID, currentProjectID, sectionName, "");
+                mapTmpOnly.put("boardName", sectionName);
+                mapTmpOnly.put("content", "");
+                sections.add(mapTmpOnly);
             }
-     
         });
     }
     @SuppressWarnings("unchecked")
     private void populateSections() {
+        sections.clear();
         Map<String, Object> boardMap = httpClient.getProjectBoards(currentProjectID);
         Object obj = boardMap.get("sections");
         if(!(obj instanceof ArrayList<?>)) {
@@ -158,10 +204,7 @@ public class App extends Application {
         }
         for (Map<String, Object> section : sections) {
             String boardName = section.get("boardName") != null ? section.get("boardName").toString() : "";
-            String content = section.get("content") != null ? section.get("content").toString() : "";
             sectionsList.getItems().add(boardName);
-
-            System.out.println("Board: " + boardName + ", Content: " + content);
         }
         System.out.println(boardContent);
     }
@@ -169,6 +212,29 @@ public class App extends Application {
         File userFile = new File("user_info.txt");
         if(userFile.exists()) {
             System.out.println("user already exists");
+            File file = new File("user_info.txt");
+            try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    String[] partsInText = line.split(":", 2);
+                    String userInfoType = partsInText[0].trim();
+                    String arg1 = partsInText.length > 1 ? partsInText[1].trim() : null;
+                    switch (userInfoType) {
+                        case "userID":
+                            userID = arg1;
+                            break;
+                        case "userName":
+                            userName = arg1;
+                            break;
+                        default:
+                            // do nothing
+                            break;
+                    }
+
+                }
+            } catch (IOException ex) {
+            }
+
             return;
         }
         Map<String,Object> userInfo = httpClient.createUser(userName);

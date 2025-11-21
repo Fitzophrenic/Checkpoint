@@ -26,8 +26,9 @@ public class RequestParser {
         String userID = null;
         String projectID = null;
         String userName= null;
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
+        Map<String, Object> response = new HashMap<>();
 
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
         String line;
         while ((line = reader.readLine()) != null) {
             if(line.isEmpty() || line.startsWith("#")) {
@@ -53,7 +54,6 @@ public class RequestParser {
                 
                 case "create-user" -> { //create-user
                     String id = sqlRequest.createUser(userName);
-                    Map<String, Object> response = new HashMap<>();
                     response.put("userID", id);
                     response.put("userName", userName);
                     return ResponseEntity.ok(response);
@@ -61,7 +61,6 @@ public class RequestParser {
                     
                 case "create-project" -> { //create-project: projectName
                     String id = sqlRequest.createProject(arg1, userID);
-                    Map<String, Object> response = new HashMap<>();
                     response.put("projectID", id);
                     response.put("projectName", arg1);
                     return ResponseEntity.ok(response);
@@ -100,6 +99,11 @@ public class RequestParser {
                 case "update-board-section" -> { // update-board-section: boardName : content
                     sqlRequest.updateBoardSection(userID, projectID, arg1, arg2);
                 }
+                case "get-board-data" -> {
+                    String content = sqlRequest.getBoardSection(projectID, arg1);
+                    response.put("content", content);
+                    return ResponseEntity.ok(response);
+                }
                 default -> {
                     
                 }
@@ -111,7 +115,7 @@ public class RequestParser {
 
 
         }
-        Map<String, Object> response = new HashMap<>();
+        
         response.put("status", "command completed sucessfully");
         return ResponseEntity.ok(response);
     }

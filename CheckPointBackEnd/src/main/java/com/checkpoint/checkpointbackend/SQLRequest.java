@@ -307,7 +307,7 @@ public class SQLRequest {
                     if(!rs.next()) {
                         return;
                     }
-                    String json = rs.getString("projectJSON");
+                    String json = rs.getString("boardsJSON");
                     JSONProjectBoard projectBoard = projectBoardConverter.convertToEntityAttribute(json);
                     if (projectBoard.getSections() == null) {
                         return;
@@ -317,6 +317,7 @@ public class SQLRequest {
                     for (int i = 0; i < sections.size(); i++) {
                         if (sections.get(i).getBoardName().equals(boardName)) {
                             index = i;
+                            sections.get(i).setContent(content);
                             break;
                         }
                     }
@@ -336,5 +337,34 @@ public class SQLRequest {
             catch (SQLException e) {
                 System.err.println("Database operation failed: " + e.getMessage());
             }
+    }
+    public String getBoardSection(String projectID, String boardName) {
+        String sqlRequest = "SELECT boardsJSON FROM Project WHERE projectID = ?";
+        String contenta = null;
+        try (CallableStatement stmt = conn.prepareCall(sqlRequest)) {
+                stmt.setString(1, projectID);
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if(!rs.next()) {
+                        return null;
+                    }
+                    String json = rs.getString("boardsJSON");
+                    JSONProjectBoard projectBoard = projectBoardConverter.convertToEntityAttribute(json);
+                    if (projectBoard.getSections() == null) {
+                        return null;
+                    }
+                    int index = -1;
+                    List<JSONProjectBoardSection> sections = projectBoard.getSections();
+                    for (int i = 0; i < sections.size(); i++) {
+                        if (sections.get(i).getBoardName().equals(boardName)) {
+                            index = i;
+                            contenta = sections.get(i).getContent();
+                        }
+                    }
+                }
+            }
+        catch (SQLException e) {
+            System.err.println("Database operation failed: " + e.getMessage());
+        }
+        return contenta;
     }
 }

@@ -59,8 +59,24 @@ public class httpClientCheckPoint {
         return compileSend(request, sendFile);
     }
     public Map<String, Object> updateBoardSection(String userID /*for checking permission level */, String projectID, String boardName, String content) {
-        String request = String.format("userID: %s %n projectID: %s %n update-board-section: %s : %s", userID, projectID, boardName, content);
+        // String request = String.format("userID: %s %n projectID: %s %n update-board-section: %s : %s", userID, projectID, boardName, content);
+        
+        ObjectMapper mapper = new ObjectMapper();
+        String escapedContent = content;
+        try {
+            escapedContent = mapper.writeValueAsString(content); // converts newlines to \n, wraps in quotes
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    String request = "userID: " + userID + "\n" +
+                        "projectID: " + projectID + "\n" +
+                        "update-board-section: " + boardName + " : " + escapedContent;
         File sendFile = new File("update-board-section.txt");
+        return compileSend(request, sendFile);
+    }
+    public Map<String, Object> getBoardSection(String projectID, String boardName) {
+        String request = String.format("projectID: %s %n get-board-data: %s",projectID, boardName);
+        File sendFile = new File("get-board-data.txt");
         return compileSend(request, sendFile);
     }
     public Map<String, Object> compileSend(String request, File sendFile) {
