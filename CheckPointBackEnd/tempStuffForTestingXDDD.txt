@@ -1,0 +1,5 @@
+TempUser
+TemporaryPassword1
+
+
+mvn spring-boot:run
