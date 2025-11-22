@@ -74,7 +74,8 @@ public class SQLRequest {
             """
             {
                 "userID": "%s",
-                "userName": "%s"
+                "userName": "%s",
+                "projects": []
             }
             """, userID, userName);
             try (PreparedStatement stmt = conn.prepareStatement(sqlRequest)){
@@ -143,6 +144,7 @@ public class SQLRequest {
             } catch (SQLException e) {
                 System.err.println("Database operation failed: " + e.getMessage());
             }
+            addUserToProject(projectID, ownerID, "o");
         }
 
         public void deleteProject(String projectID, String userID) {
@@ -185,7 +187,7 @@ public class SQLRequest {
                 stmt.setString(2, userID);
                 stmt.setString(3, permLevel);
                 stmt.execute();
-                System.out.println("added" +userID +" to  "+ projectID +" with permission level "+ permLevel+".");
+                System.out.println("added " +userID +" to  "+ projectID +" with permission level "+ permLevel+".");
             } catch (SQLException e) {
                 System.err.println("Database operation failed: " + e.getMessage());
             }
@@ -268,7 +270,7 @@ public class SQLRequest {
 
                 return mapper.readValue(
                     jsonStr,
-                    new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {}
+                    Map.class
                     );
                 }
         } catch (Exception e) {
@@ -366,5 +368,8 @@ public class SQLRequest {
             System.err.println("Database operation failed: " + e.getMessage());
         }
         return contenta;
+    }
+    private void updateUserJSON(String userID) {
+
     }
 }

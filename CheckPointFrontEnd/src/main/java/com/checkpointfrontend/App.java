@@ -11,8 +11,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -41,7 +39,6 @@ public class App extends Application {
     private static final httpClientCheckPoint httpClient =  new httpClientCheckPoint();
     private final Map<String, String> userProjects = new HashMap<>();
     private final List<Map<String, Object>> sections = new ArrayList<>();
-    ObjectMapper mapper = new ObjectMapper();
     @Override
     public void start(Stage stage) {
 
@@ -49,7 +46,7 @@ public class App extends Application {
 
         // --- create temp user for testing ---
         setupUser("monkey dave");
-       
+        httpClient.requestUserJson(userID);
         // --- Top Menu ---
         Button homeButton = new Button("Checkpoint");
         homeButton.getStyleClass().add("home-button"); // CSS class
@@ -108,7 +105,7 @@ public class App extends Application {
                 sectionsList.getItems().clear();
                 notesArea.clear();
                 mainLayout.setCenter(docSplitPane);
-                currentProjectID = userProjects.get(board);
+                currentProjectID = userProjects.get(board).toString();
                 populateSections();
             }
         });
@@ -163,6 +160,7 @@ public class App extends Application {
 
         addBoardBtn.setOnAction(e -> {//create board
             String boardName = newBoardField.getText().trim();
+            
             if (!boardName.isEmpty() && !boardsList.getItems().contains(boardName)) {
                 boardsList.getItems().add(boardName);
                 newBoardField.clear();
@@ -185,6 +183,8 @@ public class App extends Application {
                 sections.add(mapTmpOnly);
             }
         });
+                populateBoards();
+
     }
     @SuppressWarnings("unchecked")
     private void populateSections() {
@@ -208,6 +208,33 @@ public class App extends Application {
         }
         System.out.println(boardContent);
     }
+    @SuppressWarnings("unchecked")
+    private void populateBoards() {
+        Map<String, Object> boardMap = httpClient.requestUserJson(userID);
+        Object obj = boardMap.get("projects");            
+
+        System.out.println(obj);
+        if(!(obj instanceof ArrayList<?>)) {
+            return;
+        }
+
+        ArrayList<?> boardContent = (ArrayList<?>) obj;
+        for (Object item : boardContent) {
+            if (item instanceof Map<?, ?>) {
+                        System.out.println("4");
+
+                Map<String, Object> map = (Map<String, Object>) item;
+                String projectName = map.get("projectName") != null ? map.get("projectName").toString() : "";
+                String projectID = map.get("projectID") != null ? map.get("projectID").toString() : "";
+
+                userProjects.put(projectName, projectID);
+                boardsList.getItems().add(projectName);
+
+            } else {
+            }
+        }
+    }
+
     private void setupUser(String userName) {
         File userFile = new File("user_info.txt");
         if(userFile.exists()) {
