@@ -1,4 +1,8 @@
+com\checkpointfrontend\httpClientCheckPoint$1.class
+com\checkpointfrontend\httpClientInstance.class
 com\checkpointfrontend\PrimaryController.class
+com\checkpointfrontend\SectionWidget.class
 com\checkpointfrontend\App.class
+com\checkpointfrontend\BoardWidget.class
 com\checkpointfrontend\httpClientCheckPoint.class
 com\checkpointfrontend\SecondaryController.class
