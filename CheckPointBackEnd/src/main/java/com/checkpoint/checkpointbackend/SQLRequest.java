@@ -44,8 +44,14 @@ public class SQLRequest {
             return conn;
         }
 
-        public String createUser(String userName) {
-            String sqlCheckIfIDExist = "SELECT COUNT(*) FROM appUser WHERE userID = ?";
+        // public String createUser(String userName, String password) {
+            
+        //     createUser(userName, password);
+        //     return userID;
+        // }
+
+        public void createUser(String username, String password){
+            String sqlCheckIfIDExist = "SELECT COUNT(*) FROM appUser WHERE username = ?";
             String userID = IDGenerator.generateID();
             try (PreparedStatement stmt = conn.prepareStatement(sqlCheckIfIDExist)){
                 while(true) {
@@ -64,23 +70,17 @@ public class SQLRequest {
             } catch (SQLException e) {
                 System.err.println("Database operation failed: " + e.getMessage());
             }
-            createUser(userID, userName);
-            return userID;
-        }
-
-        private void createUser(String userID, String userName){
             String sqlRequest = "INSERT INTO appUser VALUES (?, ?, ?)";
             String userJson = String.format(
             """
             {
-                "userID": "%s",
                 "userName": "%s",
                 "projects": []
             }
-            """, userID, userName);
+            """, username);
             try (PreparedStatement stmt = conn.prepareStatement(sqlRequest)){
-                stmt.setString(1, userID);           // userID
-                stmt.setString(2, userName);         // username
+                stmt.setString(1, username);           // userID
+                stmt.setString(2, password);         // username
                 stmt.setString(3, userJson); 
                 int rows = stmt.executeUpdate();
                 System.out.println("Inserted " + rows + " row(s) into appUser table.");
@@ -128,7 +128,7 @@ public class SQLRequest {
             // """, projectID, projectName, ownerID);
             
             String projectJson = String.format(
-                "{\"projectID\":\"%s\",\"projectName\":\"%s\",\"users\":[{\"userID\":\"%s\",\"permissionLevel\":\"o\"}]}",
+                "{\"projectID\":\"%s\",\"projectName\":\"%s\",\"users\":[{\"username\":\"%s\",\"permissionLevel\":\"o\"}]}",
                 projectID, projectName, ownerID
             );
             String boardsJSON = "{ \"sections\": [] }";
@@ -161,21 +161,21 @@ public class SQLRequest {
             }
         }
 
-        public void removeUserFromProject(String projectID, String userID) {
+        public void removeUserFromProject(String projectID, String username) {
             
             String sqlRequest = "{CALL removeUserFromProject(?, ?)}";
             try (CallableStatement  stmt = conn.prepareCall(sqlRequest)){
                 stmt.setString(1, projectID); 
-                stmt.setString(2, userID); 
+                stmt.setString(2, username); 
 
                 stmt.execute();
-                System.out.println("Removed" +userID +"from" + projectID + ".");
+                System.out.println("Removed" +username +"from" + projectID + ".");
             } catch (SQLException e) {
                 System.err.println("Database operation failed: " + e.getMessage());
             }
         }
 
-        public void addUserToProject(String projectID, String userID, String permLevel) {
+        public void addUserToProject(String projectID, String username, String permLevel) {
             if (!(permLevel.equals("r") || permLevel.equals("w") || permLevel.equals("o")) ){
                 System.out.println("invalid permmissionLevel");
                 return;
@@ -184,16 +184,16 @@ public class SQLRequest {
             String sqlRequest = "{CALL addUserToProject(?, ?, ?)}";
             try (CallableStatement  stmt = conn.prepareCall(sqlRequest)){
                 stmt.setString(1, projectID);
-                stmt.setString(2, userID);
+                stmt.setString(2, username);
                 stmt.setString(3, permLevel);
                 stmt.execute();
-                System.out.println("added " +userID +" to  "+ projectID +" with permission level "+ permLevel+".");
+                System.out.println("added " +username +" to  "+ projectID +" with permission level "+ permLevel+".");
             } catch (SQLException e) {
-                System.err.println("Database operation failed: " + e.getMessage());
+                System.err.println("addUserToProject operation failed: " + e.getMessage());
             }
         }
 
-        public void changePermissionLevel(String projectID, String userID, String permLevel) {
+        public void changePermissionLevel(String projectID, String username, String permLevel) {
             if (!(permLevel.equals("r") || permLevel.equals("w") || permLevel.equals("o")) ){
                 System.out.println("invalid permmissionLevel");
                 return;
@@ -202,15 +202,15 @@ public class SQLRequest {
             String sqlRequest = "{CALL changePermissionLevel(?, ?, ?)}";
             try (CallableStatement  stmt = conn.prepareCall(sqlRequest)){
                 stmt.setString(1, projectID);
-                stmt.setString(2, userID);
+                stmt.setString(2, username);
                 stmt.setString(3, permLevel);
                 stmt.execute();
-                System.out.println("changed" +userID +"permission level in" + projectID + "to "+ permLevel+".");
+                System.out.println("changed" +username +"permission level in" + projectID + "to "+ permLevel+".");
             } catch (SQLException e) {
                 System.err.println("Database operation failed: " + e.getMessage());
             }
         }
-        public String checkPermissionLevel(String projectID, String userID) {
+        public String checkPermissionLevel(String projectID, String username) {
             String sqlRequest = "SELECT projectJSON FROM Project WHERE projectID = ?";
             try (CallableStatement stmt = conn.prepareCall(sqlRequest)) {
                 stmt.setString(1, projectID);
@@ -222,7 +222,7 @@ public class SQLRequest {
                     JSONProjectJSON project = projectConverter.convertToEntityAttribute(json);
                     if (project.getUsers() != null) {
                         for (JSONProjectUserPerm user : project.getUsers()) {
-                            if (user.getUserID().equals(userID)) {
+                            if (user.getUsername().equals(username)) {
                                 return user.getPermissionLevel();
                             }
                         }
@@ -255,12 +255,12 @@ public class SQLRequest {
                 return Map.of("error", e.getMessage());
             }
         }
-    public Map<String,Object> requestUserJson(String userID) {
-        String sql = "SELECT userJSON FROM appUser WHERE userID = ?";
+    public Map<String,Object> requestUserJson(String username) {
+        String sql = "SELECT userJSON FROM appUser WHERE username = ?";
         ObjectMapper mapper = new ObjectMapper();
 
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, userID);
+            stmt.setString(1, username);
 
             try (ResultSet rs = stmt.executeQuery()) {
                 if (!rs.next()) return Map.of(); // no user found
@@ -278,8 +278,8 @@ public class SQLRequest {
             return Map.of("error", e.getMessage());
         }
     }
-    public void addBoardToProject(String userID /*for checking permission level */, String projectID, String boardName, String content) {
-        if(!(checkPermissionLevel(projectID, userID).equals("o") || checkPermissionLevel(projectID, userID).equals("w"))) {
+    public void addBoardToProject(String username /*for checking permission level */, String projectID, String boardName, String content) {
+        if(!(checkPermissionLevel(projectID, username).equals("o") || checkPermissionLevel(projectID, username).equals("w"))) {
             return;
         }
         String sql =
@@ -298,8 +298,8 @@ public class SQLRequest {
         } catch (SQLException ex) {
         }
     }
-    public void updateBoardSection(String userID /*for checking permission level */, String projectID, String boardName, String content) {
-        if(!(checkPermissionLevel(projectID, userID).equals("o") || checkPermissionLevel(projectID, userID).equals("w"))) {
+    public void updateBoardSection(String username /*for checking permission level */, String projectID, String boardName, String content) {
+        if(!(checkPermissionLevel(projectID, username).equals("o") || checkPermissionLevel(projectID, username).equals("w"))) {
             return;
         }
         String sqlRequest = "SELECT boardsJSON FROM Project WHERE projectID = ?";

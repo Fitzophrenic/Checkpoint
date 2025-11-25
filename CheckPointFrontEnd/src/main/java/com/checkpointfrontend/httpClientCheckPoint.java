@@ -13,38 +13,38 @@ import org.apache.hc.core5.http.io.entity.EntityUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 public class httpClientCheckPoint {
-    public Map<String, Object> createUser(String userName) { //not going to be useable until login screen is created
-        String request = String.format("userName: %s %n create-user", userName);
+    public Map<String, Object> createUser(String userName, String password) { //not going to be useable until login screen is created
+        String request = String.format("username: %s %n create-user: %s", userName, password);
         File sendFile = new File("create-user.txt");
         return compileSend(request, sendFile);
     }
-    public Map<String, Object> createProject(String projectName, String userID) {
-        String request = String.format("userID: %s %n create-project: %s", userID, projectName);
+    public Map<String, Object> createProject(String projectName, String userName) {
+        String request = String.format("username: %s %n create-project: %s", userName, projectName);
         File sendFile = new File("create-project.txt");
         return compileSend(request, sendFile);
     }
-    public Map<String, Object> deleteProject(String projectID, String userID) {
-        String request = String.format("userID: %s %n projectID: %s %n delete-project", userID, projectID);
+    public Map<String, Object> deleteProject(String projectID, String username) {
+        String request = String.format("username: %s %n projectID: %s %n delete-project", username, projectID);
         File sendFile = new File("delete-project.txt");
         return compileSend(request, sendFile);
     }
-    public Map<String, Object> removeUserFromProject (String projectID, String userID, String ownerID) {
-        String request = String.format("userID: %s %n projectID: %s %n remove-user-from-project: %s", ownerID, projectID, userID);
+    public Map<String, Object> removeUserFromProject (String projectID, String username, String ownerID) {
+        String request = String.format("username: %s %n projectID: %s %n remove-user-from-project: %s", ownerID, projectID, username);
         File sendFile = new File("remove-user-from-project.txt");
         return compileSend(request, sendFile);
     }
-    public Map<String, Object> addUserToProject(String projectID, String userID, String ownerID, String permissionLevel) {
-        String request = String.format("userID: %s %n projectID: %s %n add-user-to-project: %s : %s", ownerID, projectID, userID, permissionLevel);
+    public Map<String, Object> addUserToProject(String projectID, String username, String ownerID, String permissionLevel) {
+        String request = String.format("username: %s %n projectID: %s %n add-user-to-project: %s : %s", ownerID, projectID, username, permissionLevel);
         File sendFile = new File("add-user-to-project.txt");
         return compileSend(request, sendFile);
     }
-    public Map<String, Object> changePermissionLevel(String projectID, String userID, String ownerID, String permissionLevel) {
-        String request = String.format("userID: %s %n projectID: %s %n change-permission-level: %s : %s", ownerID, projectID, userID, permissionLevel);
+    public Map<String, Object> changePermissionLevel(String projectID, String username, String ownerID, String permissionLevel) {
+        String request = String.format("username: %s %n projectID: %s %n change-permission-level: %s : %s", ownerID, projectID, username, permissionLevel);
         File sendFile = new File("change-permission-level.txt");
         return compileSend(request, sendFile);
     }
-    public Map<String, Object> requestUserJson(String userID) {
-        String request = String.format("userID: %s %n get-user-json", userID);
+    public Map<String, Object> requestUserJson(String username) {
+        String request = String.format("username: %s %n get-user-json", username);
         File sendFile = new File("get-user-json.txt");
         return compileSend(request, sendFile);
     }
@@ -53,12 +53,12 @@ public class httpClientCheckPoint {
         File sendFile = new File("get-project-boards.txt");
         return compileSend(request, sendFile);
     }
-    public Map<String, Object> addBoardToProject(String userID /*for checking permission level */, String projectID, String boardName, String content) {
-        String request = String.format("userID: %s %n projectID: %s %n add-board-to-project: %s : %s", userID, projectID, boardName, content);
+    public Map<String, Object> addBoardToProject(String username /*for checking permission level */, String projectID, String boardName, String content) {
+        String request = String.format("username: %s %n projectID: %s %n add-board-to-project: %s : %s", username, projectID, boardName, content);
         File sendFile = new File("add-board-to-project.txt");
         return compileSend(request, sendFile);
     }
-    public Map<String, Object> updateBoardSection(String userID /*for checking permission level */, String projectID, String boardName, String content) {
+    public Map<String, Object> updateBoardSection(String username /*for checking permission level */, String projectID, String boardName, String content) {
         // String request = String.format("userID: %s %n projectID: %s %n update-board-section: %s : %s", userID, projectID, boardName, content);
         
         ObjectMapper mapper = new ObjectMapper();
@@ -68,7 +68,7 @@ public class httpClientCheckPoint {
         } catch (Exception ex) {
             ex.printStackTrace();
         }
-    String request = "userID: " + userID + "\n" +
+    String request = "username: " + username + "\n" +
                         "projectID: " + projectID + "\n" +
                         "update-board-section: " + boardName + " : " + escapedContent;
         File sendFile = new File("update-board-section.txt");

@@ -1,28 +1,28 @@
 package com.checkpoint.checkpointbackend;
 import org.springframework.stereotype.Component;
 
-@Component
 
+  @Component
 public class JSONProjectUserPerm {
-    
 
-    private String userID;
+    private String username;
     private String permissionLevel;
 
-    public String getUserID() {
-        return userID;
+    public String getUsername() {
+        return username;
     }
 
     public String getPermissionLevel() {
         return permissionLevel;
     }
 
-    public void setUserID(String userID) {
-        this.userID = userID;
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public void setPermissionLevel(String permissionLevel) {
         this.permissionLevel = permissionLevel;
     }
-    
 }
+    
+

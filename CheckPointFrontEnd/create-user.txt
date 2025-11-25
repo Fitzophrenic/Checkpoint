@@ -1,2 +1,2 @@
-userName: monkey dave 
- create-user
+username: monkey dave 
+ create-user: dumbass password

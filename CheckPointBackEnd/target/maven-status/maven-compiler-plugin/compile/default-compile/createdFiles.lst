@@ -1,8 +1,15 @@
-com\checkpoint\checkpointbackend\IDGenerator.class
 com\checkpoint\checkpointbackend\CheckpointbackendApplication.class
 com\checkpoint\checkpointbackend\RequestParser.class
 com\checkpoint\checkpointbackend\JSONProjectConverter.class
+com\checkpoint\checkpointbackend\JSONUserProjects.class
 com\checkpoint\checkpointbackend\JSONProjectObj.class
 com\checkpoint\checkpointbackend\JSONProjectUserPerm.class
 com\checkpoint\checkpointbackend\JSONProjectJSON.class
+com\checkpoint\checkpointbackend\JSONUser.class
 com\checkpoint\checkpointbackend\SQLRequest.class
+com\checkpoint\checkpointbackend\JSONProjectBoardConverter.class
+com\checkpoint\checkpointbackend\IDGenerator.class
+com\checkpoint\checkpointbackend\JSONProjectBoardSection.class
+com\checkpoint\checkpointbackend\JSONUserConverter.class
+com\checkpoint\checkpointbackend\ProjectEntity.class
+com\checkpoint\checkpointbackend\JSONProjectBoard.class

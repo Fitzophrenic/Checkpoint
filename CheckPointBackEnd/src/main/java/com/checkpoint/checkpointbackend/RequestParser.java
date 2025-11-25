@@ -23,9 +23,8 @@ public class RequestParser {
 
     @PostMapping("/upload")
     public ResponseEntity<Map<String, Object>> uploadFile(@RequestParam("file") MultipartFile file) {
-        String userID = null;
+        String username = null;
         String projectID = null;
-        String userName= null;
         Map<String, Object> response = new HashMap<>();
 
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
@@ -38,50 +37,49 @@ public class RequestParser {
             String command = partsInText[0].trim();
             String arg1 = partsInText.length > 1 ? partsInText[1].trim() : null;
             String arg2 = partsInText.length > 2 ? partsInText[2].trim() : null;
+            System.out.println(line);
 
             switch (command) {
-                case "userID" -> { //userID: userID
-                    userID = arg1;
+                case "username" -> { //userID: userID
+                    username = arg1;
                 }
 
                 case "projectID" -> { //projectID: projectID
                     projectID = arg1;
                 }
 
-                case "userName" -> { //userName: userName
-                    userName = arg1;
-                }
+                // case "userName" -> { //userName: userName
+                //     userName = arg1;
+                // }
                 
-                case "create-user" -> { //create-user
-                    String id = sqlRequest.createUser(userName);
-                    response.put("userID", id);
-                    response.put("userName", userName);
-                    return ResponseEntity.ok(response);
+                case "create-user" -> { //create-user: password
+                    sqlRequest.createUser(username, arg1);
+                    
                 }
                     
                 case "create-project" -> { //create-project: projectName
-                    String id = sqlRequest.createProject(arg1, userID);
+                    String id = sqlRequest.createProject(arg1, username);
                     response.put("projectID", id);
                     response.put("projectName", arg1);
                     return ResponseEntity.ok(response);
                 }
                 case "delete-project" -> { //delete-project
-                    sqlRequest.deleteProject(projectID, userID);
+                    sqlRequest.deleteProject(projectID, username);
                 }
                 case "remove-user-from-project" -> { //remove-user-from-project : anotherUserID
-                    if(!sqlRequest.checkPermissionLevel(projectID, userID).equals("o")) {
+                    if(!sqlRequest.checkPermissionLevel(projectID, username).equals("o")) {
                         continue;
                     }
                     sqlRequest.removeUserFromProject(projectID, arg1);
                 }
                 case "add-user-to-project" -> { //add-user-to-project: userID : permissionLevel
-                    if(!sqlRequest.checkPermissionLevel(projectID, userID).equals("o")) {
+                    if(!sqlRequest.checkPermissionLevel(projectID, username).equals("o")) {
                         continue;
                     }
                     sqlRequest.addUserToProject(projectID, arg1, arg2);
                 }
                 case "change-permission-level" -> { //change-permission-level: userID : permissionLevel
-                    if(!sqlRequest.checkPermissionLevel(projectID, userID).equals("o")) {
+                    if(!sqlRequest.checkPermissionLevel(projectID, username).equals("o")) {
                         continue;
                     }
                     sqlRequest.changePermissionLevel(projectID, arg1, arg2);
@@ -91,13 +89,13 @@ public class RequestParser {
                     return ResponseEntity.ok(sqlRequest.requestProjectBoard(projectID));
                 }
                 case "get-user-json" -> { // get-user-json
-                    return ResponseEntity.ok(sqlRequest.requestUserJson(userID));
+                    return ResponseEntity.ok(sqlRequest.requestUserJson(username));
                 }
                 case "add-board-to-project" -> { // add-board-to-project: boardName : content
-                    sqlRequest.addBoardToProject(userID, projectID, arg1, arg2);
+                    sqlRequest.addBoardToProject(username, projectID, arg1, arg2);
                 }
                 case "update-board-section" -> { // update-board-section: boardName : content
-                    sqlRequest.updateBoardSection(userID, projectID, arg1, arg2);
+                    sqlRequest.updateBoardSection(username, projectID, arg1, arg2);
                 }
                 case "get-board-data" -> {
                     String content = sqlRequest.getBoardSection(projectID, arg1);
@@ -109,7 +107,6 @@ public class RequestParser {
                 }
             }
 
-            System.out.println(line);
             }
         } catch (IOException e) {
 

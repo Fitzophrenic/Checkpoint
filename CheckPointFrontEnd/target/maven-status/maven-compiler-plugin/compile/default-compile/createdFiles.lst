@@ -1,4 +1,13 @@
+com\checkpointfrontend\WidgetTimer$1.class
+com\checkpointfrontend\httpClientInstance.class
 com\checkpointfrontend\PrimaryController.class
+com\checkpointfrontend\SectionWidget.class
+com\checkpointfrontend\Widget.class
 com\checkpointfrontend\App.class
+com\checkpointfrontend\BoardWidget.class
 com\checkpointfrontend\httpClientCheckPoint.class
+com\checkpointfrontend\httpClientCheckPoint$1.class
+com\checkpointfrontend\WidgetManager.class
+com\checkpointfrontend\WidgetTimer.class
 com\checkpointfrontend\SecondaryController.class
+com\checkpointfrontend\WidgetBoard.class
