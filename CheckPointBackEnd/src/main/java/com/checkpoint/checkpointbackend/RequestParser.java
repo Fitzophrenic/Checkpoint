@@ -102,6 +102,10 @@ public class RequestParser {
                     response.put("content", content);
                     return ResponseEntity.ok(response);
                 }
+                case "login" -> {
+                    return ResponseEntity.ok(sqlRequest.userLogIn(username, arg1));
+
+                }
                 default -> {
                     
                 }

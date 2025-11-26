@@ -12,10 +12,12 @@ import java.util.List;
 import java.util.Map;
 
 import javafx.application.Application;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.PasswordField;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
@@ -32,20 +34,133 @@ public class App extends Application {
     private ListView<String> sectionsList;
     private WidgetManager sectionFocus;
     private ListView<String> boardsList;
-    private String username = "abcdefghijkl"; // change later when login has it
-    private String currentProjectID = "123456789ABC";
+    private String username = ""; // change later when login has it
+    private String currentProjectID = "";
     private String currentProjectSection = "";
     private static final httpClientCheckPoint httpClient =  new httpClientCheckPoint();
     private final Map<String, String> userProjects = new HashMap<>();
     private final List<Map<String, Object>> sections = new ArrayList<>();
-    @Override
-    public void start(Stage stage) {
+    
+    private Stage window;
 
-        stage.setTitle("Checkpoint");
+    private Scene loginScene;
+    private Scene createAccountScene;
+    private Scene homeScene;
+
+         @Override
+        public void start(Stage stage) {
+            this.window = stage;
+            window.setTitle("Checkpoint");
+
+            loginScene = createLoginScene();
+            createAccountScene = createCreateAccountScene();
+
+            window.setScene(loginScene);
+            window.show();
+        }
+
+    private Scene createLoginScene() {
+        Label title = new Label("Log in");
+        title.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: white;");
+        HBox titleBar = new HBox(title);
+        titleBar.setStyle("-fx-background-color: #18a438; -fx-padding: 10;");
+        titleBar.setAlignment(Pos.CENTER_LEFT);
+
+        TextField usernameField = new TextField();
+        usernameField.setPromptText("Username");
+
+        PasswordField passwordField = new PasswordField();
+        passwordField.setPromptText("Password");
+
+        HBox buttons = new HBox(10);
+        Button loginBtn = new Button("Log in");
+        Button createBtn = new Button("Create");
+        Button cancelBtn = new Button("Cancel");
+        buttons.getChildren().addAll(loginBtn, createBtn, cancelBtn);
+        buttons.setAlignment(Pos.CENTER);
+
+        VBox layout = new VBox(10, titleBar, new Label("Username:"), usernameField, new Label("Password:"), passwordField, buttons);
+        layout.setAlignment(Pos.CENTER);
+        layout.setStyle("-fx-padding: 20; -fx-background-color: white;");
+
+        Scene scene = new Scene(layout, 400, 300);
+
+        // Button actions
+        loginBtn.setOnAction(e -> {
+            String user = usernameField.getText().trim();
+            String password = passwordField.getText().trim();
+            if (!user.isEmpty() && !password.isEmpty()) {
+                Map<String,Object> userInfo = httpClient.loginUser(user, password);
+                if(userInfo != null && userInfo.get("username") != null) {
+                    username = (String) userInfo.get("username");
+                    // httpClient.requestUserJson(username);
+                    initializeHomeScene();
+                    window.setScene(homeScene);
+                }
+            }
+        });
+
+        createBtn.setOnAction(e -> window.setScene(createAccountScene));
+        cancelBtn.setOnAction(e -> window.close());
+
+        return scene;
+    }
+
+    private Scene createCreateAccountScene() {
+        Label title = new Label("Create Log in");
+        title.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: white;");
+        HBox titleBar = new HBox(title);
+        titleBar.setStyle("-fx-background-color: #18a438; -fx-padding: 10;");
+        titleBar.setAlignment(Pos.CENTER_LEFT);
+
+        TextField usernameField = new TextField();
+        usernameField.setPromptText("username");
+
+        PasswordField passwordField = new PasswordField();
+        passwordField.setPromptText("password");
+
+        HBox buttons = new HBox(10);
+        Button createBtn = new Button("Create account");
+        Button cancelBtn = new Button("Cancel");
+        buttons.getChildren().addAll(createBtn, cancelBtn);
+        buttons.setAlignment(Pos.CENTER);
+
+        VBox layout = new VBox(10, titleBar, new Label("Choose username:"), usernameField, new Label("Choose password:"), passwordField, buttons);
+        layout.setAlignment(Pos.CENTER);
+        layout.setStyle("-fx-padding: 20; -fx-background-color: white;");
+
+        Scene scene = new Scene(layout, 400, 300);
+
+        // More button actions
+        createBtn.setOnAction(e -> {
+            String user = usernameField.getText().trim();
+            String password = passwordField.getText().trim();
+            if (!user.isEmpty() && !password.isEmpty()) {
+                Map<String,Object> userInfo = httpClient.createUser(user, password);
+                if(userInfo != null && userInfo.get("username") != null) {
+                    username = (String) userInfo.get("username");
+                    File userFile = new File("user_info.txt");
+                    try (FileWriter fw = new FileWriter(userFile)) {
+                        fw.write(String.format("username: %s%n", username));
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                    }
+                    initializeHomeScene();
+                    window.setScene(homeScene);
+                }
+            }
+        });
+
+        cancelBtn.setOnAction(e -> window.setScene(loginScene));
+
+        return scene;
+    }
+    public void initializeHomeScene() {
+
 
         // Temorary user set here
-        setupUser("monkey dave");
-        httpClient.requestUserJson(username);
+        // setupUser("monkey dave");
+        // httpClient.requestUserJson(username);
         // Menu Bar
         Button homeButton = new Button("Checkpoint");
         homeButton.getStyleClass().add("home-button"); // CSS class
@@ -77,8 +192,9 @@ public class App extends Application {
         newSectionField.setPromptText("New Section Name");
         Button addSectionButton = new Button("Add Section");
         Button addTimerButton = new Button("Add Timer");
+        Button shareProjectButton = new Button("Share Project");
 
-        VBox sectionBox = new VBox(10, sectionsList, new HBox(10, newSectionField, addSectionButton, addTimerButton));
+        VBox sectionBox = new VBox(10, sectionsList, new HBox(10, newSectionField, addSectionButton, addTimerButton, shareProjectButton));
         sectionBox.setPrefWidth(250);
 
         docSplitPane = new SplitPane();
@@ -89,14 +205,10 @@ public class App extends Application {
         mainLayout = new BorderPane();
         mainLayout.setTop(topMenuBar);
         mainLayout.setCenter(homeScreen);
-
-        scene = new Scene(mainLayout, 800, 600);
+        homeScene = new Scene(mainLayout, 800, 600);
+        homeScene.getStylesheets().add(getClass().getResource("/com/checkpointfrontend/style.css").toExternalForm());
 
         // CSS
-        scene.getStylesheets().add(getClass().getResource("/com/checkpointfrontend/style.css").toExternalForm());
-
-        stage.setScene(scene);
-        stage.show();
 
         // Handlers
         boardsList.setOnMouseClicked(e -> {//opens a board / project
@@ -194,6 +306,9 @@ public class App extends Application {
                 mapTmpOnly.put("content", "Timer:");
                 sections.add(mapTmpOnly);
             }
+        });
+        shareProjectButton.setOnAction(e -> {
+            ShareProject shareProjectStage = new ShareProject(window, username, currentProjectID, httpClient);
         });
                 populateBoards();
 

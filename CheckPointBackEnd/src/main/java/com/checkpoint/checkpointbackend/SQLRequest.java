@@ -5,6 +5,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -74,7 +75,7 @@ public class SQLRequest {
             String userJson = String.format(
             """
             {
-                "userName": "%s",
+                "username": "%s",
                 "projects": []
             }
             """, username);
@@ -369,7 +370,29 @@ public class SQLRequest {
         }
         return contenta;
     }
-    private void updateUserJSON(String userID) {
+    public Map<String,Object> userLogIn(String username, String password) {
+        String sql = "SELECT userPassword FROM appUser WHERE username = ?";
+        Map<String, Object> response = new HashMap<>();
 
+        try( PreparedStatement stmt = conn.prepareStatement(sql)){
+            stmt.setString(1, username);
+
+            ResultSet rs = stmt.executeQuery();
+
+            if (!rs.next()) {
+                response.put("error", "couldn't find user");
+                return response;
+            }
+
+            String usersUsername = rs.getString("userPassword");
+
+            if (!usersUsername.equals(password)) {
+                response.put("error", "inncorect password");
+                return response;
+            }
+        }catch (SQLException e) {
+            System.err.println("Database operation failed: " + e.getMessage());
+        }
+        return requestUserJson(username);
     }
 }

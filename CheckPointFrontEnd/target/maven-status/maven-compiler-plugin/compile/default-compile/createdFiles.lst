@@ -1,5 +1,6 @@
 com\checkpointfrontend\WidgetTimer$1.class
 com\checkpointfrontend\httpClientInstance.class
+com\checkpointfrontend\ShareProject.class
 com\checkpointfrontend\PrimaryController.class
 com\checkpointfrontend\SectionWidget.class
 com\checkpointfrontend\Widget.class

@@ -58,6 +58,11 @@ public class httpClientCheckPoint {
         File sendFile = new File("add-board-to-project.txt");
         return compileSend(request, sendFile);
     }
+    public Map<String, Object> loginUser(String userName, String password) {
+        String request = String.format("username: %s %n login: %s", userName, password);
+        File sendFile = new File("login.txt");
+        return compileSend(request, sendFile);
+    }
     public Map<String, Object> updateBoardSection(String username /*for checking permission level */, String projectID, String boardName, String content) {
         // String request = String.format("userID: %s %n projectID: %s %n update-board-section: %s : %s", userID, projectID, boardName, content);
         
