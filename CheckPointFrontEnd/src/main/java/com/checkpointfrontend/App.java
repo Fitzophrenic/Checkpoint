@@ -11,7 +11,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.checkpointfrontend.calendar.CalendarScreen;
+
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -54,7 +57,7 @@ public class App extends Application {
 
             loginScene = createLoginScene();
             createAccountScene = createCreateAccountScene();
-
+       
             window.setScene(loginScene);
             window.show();
         }
@@ -96,16 +99,22 @@ public class App extends Application {
                     // httpClient.requestUserJson(username);
                     initializeHomeScene();
                     window.setScene(homeScene);
+                    new Thread(() -> ServerReceiver.connect(username, this::receiveData)).start();
+
                 }
             }
         });
 
         createBtn.setOnAction(e -> window.setScene(createAccountScene));
         cancelBtn.setOnAction(e -> window.close());
-
+  
         return scene;
     }
-
+    private void receiveData(MessageFormat message) {
+    Platform.runLater(() -> {
+        System.out.println(message.getSender() + ": " + message.getContent());
+    });
+}
     private Scene createCreateAccountScene() {
         Label title = new Label("Create Log in");
         title.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: white;");
@@ -158,9 +167,6 @@ public class App extends Application {
     public void initializeHomeScene() {
 
 
-        // Temorary user set here
-        // setupUser("monkey dave");
-        // httpClient.requestUserJson(username);
         // Menu Bar
         Button homeButton = new Button("Checkpoint");
         homeButton.getStyleClass().add("home-button"); // CSS class
@@ -174,9 +180,9 @@ public class App extends Application {
         TextField newBoardField = new TextField();
         newBoardField.setPromptText("New Board Name");
         Button addBoardBtn = new Button("Add Board");
-
+        Button openUserCalendar = new Button("Open Personal Calendar");
         
-        HBox addBoardBox = new HBox(10, newBoardField, addBoardBtn);
+        HBox addBoardBox = new HBox(10, newBoardField, addBoardBtn, openUserCalendar);
         VBox homeScreen = new VBox(10, new Label("Boards:"), boardsList, addBoardBox);
         homeScreen.setStyle("-fx-padding: 50;");
         homeScreen.getStyleClass().add("home-screen");
@@ -193,8 +199,8 @@ public class App extends Application {
         Button addSectionButton = new Button("Add Section");
         Button addTimerButton = new Button("Add Timer");
         Button shareProjectButton = new Button("Share Project");
-
-        VBox sectionBox = new VBox(10, sectionsList, new HBox(10, newSectionField, addSectionButton, addTimerButton, shareProjectButton));
+        Button openProjectCalendarButton = new Button("Open calendar");
+        VBox sectionBox = new VBox(10, sectionsList, new VBox(3, newSectionField, addSectionButton, addTimerButton, shareProjectButton,openProjectCalendarButton));
         sectionBox.setPrefWidth(250);
 
         docSplitPane = new SplitPane();
@@ -266,10 +272,14 @@ public class App extends Application {
                 multiLineContent = multiLineContent.substring(1, multiLineContent.length() - 1);
             }
             sectionFocus.determineAndUpdateWidget(multiLineContent);
-            // notesArea.setText(content);
             currentProjectSection = section;
         });
-
+        openUserCalendar.setOnAction(e -> {
+            new CalendarScreen(window, username, httpClient);
+        });
+        openProjectCalendarButton.setOnAction(e -> {
+            new CalendarScreen(window, username, currentProjectID, httpClient);
+        });
         addBoardBtn.setOnAction(e -> {//create board
             String boardName = newBoardField.getText().trim();
             
@@ -338,7 +348,7 @@ public class App extends Application {
     @SuppressWarnings("unchecked")
     private void populateBoards() {
         Map<String, Object> boardMap = httpClient.requestUserJson(username);
-        Object obj = boardMap.get("projects");            
+        Object obj = boardMap.get("projects");
 
         System.out.println(obj);
         if(!(obj instanceof ArrayList<?>)) {

@@ -84,9 +84,29 @@ public class httpClientCheckPoint {
         File sendFile = new File("get-board-data.txt");
         return compileSend(request, sendFile);
     }
+    public Map<String, Object> getUserCalendar(String username) {
+        String request = String.format("username: %s %n request-user-calander",username);
+        File sendFile = new File("get-user-calendar.txt");
+        return compileSend(request, sendFile);
+    }
+    public Map<String, Object> updateUserCalendar(String username, String content) {
+        String request = String.format("username: %s %n update-user-calander: %s",username, content);
+        File sendFile = new File("update-user-calendar.txt");
+        return compileSend(request, sendFile);
+    }
+    public Map<String, Object> getProjectCalendar(String projectID) {
+        String request = String.format("projectID: %s %n request-project-calander",projectID);
+        File sendFile = new File("get-project-calendar.txt");
+        return compileSend(request, sendFile);
+    }
+    public Map<String, Object> updateProjectCalendar(String username, String projectID, String content) {
+        String request = String.format("username: %s %n projectID: %s %n update-project-calander: %s",username, projectID, content);
+        File sendFile = new File("update-project-calendar.txt");
+        return compileSend(request, sendFile);
+    }
     public Map<String, Object> compileSend(String request, File sendFile) {
         CloseableHttpClient client = httpClientInstance.CLIENT;
-        HttpPost post = httpClientInstance.POSTURL;
+        HttpPost post = new HttpPost("http://localhost:8080/api/files/upload");
 
         try (FileWriter fw = new FileWriter(sendFile)) {
             fw.write(request);
@@ -103,7 +123,7 @@ public class httpClientCheckPoint {
             post.setEntity(entity);
 
             ObjectMapper mapper = new ObjectMapper();
-
+            
             Map<String, Object> response = client.execute(
                 post,
                 httpResponse -> {
@@ -112,6 +132,7 @@ public class httpClientCheckPoint {
                 }
             );
             System.out.println(response.toString());
+
             return response;
         } catch (IOException ex) {
             ex.printStackTrace();
@@ -124,7 +145,7 @@ public class httpClientCheckPoint {
         try {
 
             HttpEntity entity = MultipartEntityBuilder.create()
-                    .addBinaryBody("file", new File("test.txt"))
+                    .addBinaryBody("file", new File("create-user.txt"))
                     .build();
 
             post.setEntity(entity);
