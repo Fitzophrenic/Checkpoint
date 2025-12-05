@@ -14,6 +14,12 @@ import javax.sql.DataSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.checkpoint.checkpointbackend.JSONFormats.ProjectBoardsJSON.JSONProjectBoard;
+import com.checkpoint.checkpointbackend.JSONFormats.ProjectBoardsJSON.JSONProjectBoardConverter;
+import com.checkpoint.checkpointbackend.JSONFormats.ProjectBoardsJSON.JSONProjectBoardSection;
+import com.checkpoint.checkpointbackend.JSONFormats.ProjectJSON.JSONProjectConverter;
+import com.checkpoint.checkpointbackend.JSONFormats.ProjectJSON.JSONProjectJSON;
+import com.checkpoint.checkpointbackend.JSONFormats.ProjectJSON.JSONProjectUserPerm;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.annotation.PostConstruct;
@@ -71,7 +77,7 @@ public class SQLRequest {
             } catch (SQLException e) {
                 System.err.println("Database operation failed: " + e.getMessage());
             }
-            String sqlRequest = "INSERT INTO appUser VALUES (?, ?, ?)";
+            String sqlRequest = "INSERT INTO appUser VALUES (?, ?, ?, ?)";
             String userJson = String.format(
             """
             {
@@ -79,10 +85,45 @@ public class SQLRequest {
                 "projects": []
             }
             """, username);
+
+            // String calendarJSON = """  FULL JSON POTENTIAL
+            // {
+            // "years": [
+            //     {
+            //     "yearNum": "",
+            //     "months": [
+            //         {
+            //         "monthName": "",
+            //         "days": [
+            //             {
+            //             "date": "",
+            //             "events": [
+            //                 {
+            //                 "eventName": "",
+            //                 "timeFrame": "",
+            //                 "eventCol": ""
+            //                 }
+            //             ]
+            //             }
+            //         ]
+            //         }
+            //     ]
+            //     }
+            // ]
+            // }
+            // """;
+            String calendarJSON = """
+            {
+            "years": [
+            ]
+            }
+            """;    
             try (PreparedStatement stmt = conn.prepareStatement(sqlRequest)){
                 stmt.setString(1, username);           // userID
                 stmt.setString(2, password);         // username
                 stmt.setString(3, userJson); 
+                stmt.setString(4, calendarJSON); 
+
                 int rows = stmt.executeUpdate();
                 System.out.println("Inserted " + rows + " row(s) into appUser table.");
             } catch (SQLException e) {
@@ -115,7 +156,7 @@ public class SQLRequest {
         }
 
         private void createProject(String projectID, String projectName, String ownerID){
-            String sqlRequest = "INSERT INTO Project (projectID, projectName, OwnerID, projectJSON, boardsJSON) VALUES (?, ?, ?, ?, ?)";
+            String sqlRequest = "INSERT INTO Project (projectID, projectName, OwnerID, projectJSON, boardsJSON, projectCalendar) VALUES (?, ?, ?, ?, ?, ?)";
 
             // String projectJson = String.format(
             // """
@@ -133,13 +174,20 @@ public class SQLRequest {
                 projectID, projectName, ownerID
             );
             String boardsJSON = "{ \"sections\": [] }";
-
+            String calendarJSON = """
+            {
+            "years": [
+            ]
+            }
+            """;  
             try (PreparedStatement stmt = conn.prepareStatement(sqlRequest)){
                 stmt.setString(1, projectID);           // project ID
                 stmt.setString(2, projectName);         // project name
                 stmt.setString(3, ownerID);             // owner
                 stmt.setString(4, projectJson);         // JSON column
                 stmt.setString(5, boardsJSON);          // JSON column
+                stmt.setString(6, calendarJSON);        // JSON column
+
                 int rows = stmt.executeUpdate();
                 System.out.println("Inserted " + rows + " row(s) into Project table.");
             } catch (SQLException e) {
@@ -395,4 +443,78 @@ public class SQLRequest {
         }
         return requestUserJson(username);
     }
+    public Map<String,Object> requestUserCalender (String username) {
+        String sql = "SELECT personalCalendar FROM appUser WHERE username = ?";
+        ObjectMapper mapper = new ObjectMapper();
+
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, username);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (!rs.next()) return Map.of(); // no user found
+
+                String jsonStr = rs.getString("personalCalendar");
+                if (jsonStr == null || jsonStr.isBlank()) return Map.of();
+
+                return mapper.readValue(
+                    jsonStr,
+                    Map.class
+                    );
+                }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Map.of("error", e.getMessage());
+        }
+    }
+    public Map<String,Object> updateUserCalendar (String username, String content) {
+        String sql = "UPDATE appUser SET personalCalendar = ? WHERE username = ?";
+        try (PreparedStatement updateStmt = conn.prepareStatement(sql)) {
+            updateStmt.setString(1, content);
+            updateStmt.setString(2, username);
+            updateStmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        
+        return null;
+    }
+    public Map<String,Object> requestProjectCalender (String projectID) {
+        String sql = "SELECT projectCalendar FROM Project WHERE projectID = ?";
+        ObjectMapper mapper = new ObjectMapper();
+
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, projectID);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (!rs.next()) return Map.of(); // no user found
+
+                String jsonStr = rs.getString("projectCalendar");
+                if (jsonStr == null || jsonStr.isBlank()) return Map.of();
+
+                return mapper.readValue(
+                    jsonStr,
+                    Map.class
+                    );
+                }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Map.of("error", e.getMessage());
+        }
+    }
+    public Map<String,Object> updateProjectCalender (String username, String projectID, String content) {
+            if(!(checkPermissionLevel(projectID, username).equals("o") || checkPermissionLevel(projectID, username).equals("w"))) {
+                return null;
+            }
+        String sql = "UPDATE Project SET projectCalendar = ? WHERE projectID = ?";
+        try (PreparedStatement updateStmt = conn.prepareStatement(sql)) {
+            updateStmt.setString(1, content);
+            updateStmt.setString(2, projectID);
+            updateStmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        
+        return null;
+    }
+
 }

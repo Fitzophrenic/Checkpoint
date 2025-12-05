@@ -1,5 +1,10 @@
 package com.checkpoint.checkpointbackend;
 
+import com.checkpoint.checkpointbackend.JSONFormats.ProjectBoardsJSON.JSONProjectBoard;
+import com.checkpoint.checkpointbackend.JSONFormats.ProjectBoardsJSON.JSONProjectBoardConverter;
+import com.checkpoint.checkpointbackend.JSONFormats.ProjectJSON.JSONProjectConverter;
+import com.checkpoint.checkpointbackend.JSONFormats.ProjectJSON.JSONProjectJSON;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;

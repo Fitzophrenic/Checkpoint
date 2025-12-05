@@ -54,7 +54,9 @@ public class RequestParser {
                 
                 case "create-user" -> { //create-user: password
                     sqlRequest.createUser(username, arg1);
-                    
+                    response.put("username", username);
+                    response.put("status", "success");
+                    return ResponseEntity.ok(response);
                 }
                     
                 case "create-project" -> { //create-project: projectName
@@ -106,6 +108,20 @@ public class RequestParser {
                     return ResponseEntity.ok(sqlRequest.userLogIn(username, arg1));
 
                 }
+                case "request-user-calander" ->{
+                    return ResponseEntity.ok(sqlRequest.requestUserCalender(username));
+                }
+                case "update-user-calander" ->{
+                    String jsonarg1 = line.substring(line.indexOf(':') + 1).trim();
+                    sqlRequest.updateUserCalendar(username, jsonarg1);
+                }
+                case "request-project-calander" ->{
+                    return ResponseEntity.ok(sqlRequest.requestProjectCalender(projectID));
+                }
+                case "update-project-calander" ->{
+                    String jsonarg1 = line.substring(line.indexOf(':') + 1).trim();
+                    sqlRequest.updateProjectCalender(username, projectID, jsonarg1);
+                }
                 default -> {
                     
                 }
@@ -113,8 +129,8 @@ public class RequestParser {
 
             }
         } catch (IOException e) {
-
-
+            response.put("error", "Failed to read file: " + e.getMessage());
+            return ResponseEntity.ok(response);
         }
         
         response.put("status", "command completed sucessfully");
