@@ -1,2 +1,0 @@
-username: ee 
- update-user-calander: {"years":[{"yearNum":"2025","months":[{"monthName":"DECEMBER","days":[{"date":"3","events":[{"eventName":"vs","timeFrame":"12:00 AM-10:00 AM","eventCol":"#b31a1a"},{"eventName":"n","timeFrame":"12:00 AM-8:45 PM","eventCol":"#b31a1a"}]},{"date":"22","events":[{"eventName":"das","timeFrame":"12:00 AM-12:00 AM","eventCol":"#b31a1a"}]}]}]},{"yearNum":"356","months":[{"monthName":"DECEMBER","days":[{"date":"22","events":[{"eventName":"das","timeFrame":"12:00 AM-12:00 AM","eventCol":"#b31a1a"}]}]}]}]}
