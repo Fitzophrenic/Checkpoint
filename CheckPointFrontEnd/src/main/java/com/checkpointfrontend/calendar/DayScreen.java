@@ -143,6 +143,9 @@ public class DayScreen extends VBox{
             EventRepersentaionForDayVeiw veiw = new EventRepersentaionForDayVeiw(even, isProject,this);
             veiw.configureDeleteButton(day.getEvents());
             events.getChildren().add(veiw);
+            if(isProject) {
+                addProjectEvent(even);
+            }
             newEventFeild.clear();
 
         });
@@ -156,6 +159,9 @@ public class DayScreen extends VBox{
                 checkBox.setText("This event has an ending time");
             }
         });
+    }
+    public void addProjectEvent(EventJSONFormat event) {
+        stage.addEventToProject(date, stage.getProject(), event);
     }
     public void addEvent(EventJSONFormat event) {
         stage.addEventToUser(date, stage.getUser(), event);

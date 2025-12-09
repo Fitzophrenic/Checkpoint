@@ -15,52 +15,52 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class httpClientCheckPoint {
     public Map<String, Object> createUser(String userName, String password) { //not going to be useable until login screen is created
         String request = String.format("username: %s %n create-user: %s", userName, password);
-        File sendFile = new File("create-user.txt");
+        File sendFile = new File("last-call.txt");
         return compileSend(request, sendFile);
     }
     public Map<String, Object> createProject(String projectName, String userName) {
         String request = String.format("username: %s %n create-project: %s", userName, projectName);
-        File sendFile = new File("create-project.txt");
+        File sendFile = new File("last-call.txt");
         return compileSend(request, sendFile);
     }
     public Map<String, Object> deleteProject(String projectID, String username) {
         String request = String.format("username: %s %n projectID: %s %n delete-project", username, projectID);
-        File sendFile = new File("delete-project.txt");
+        File sendFile = new File("last-call.txt");
         return compileSend(request, sendFile);
     }
     public Map<String, Object> removeUserFromProject (String projectID, String username, String ownerID) {
         String request = String.format("username: %s %n projectID: %s %n remove-user-from-project: %s", ownerID, projectID, username);
-        File sendFile = new File("remove-user-from-project.txt");
+        File sendFile = new File("last-call.txt");
         return compileSend(request, sendFile);
     }
     public Map<String, Object> addUserToProject(String projectID, String username, String ownerID, String permissionLevel) {
         String request = String.format("username: %s %n projectID: %s %n add-user-to-project: %s : %s", ownerID, projectID, username, permissionLevel);
-        File sendFile = new File("add-user-to-project.txt");
+        File sendFile = new File("last-call.txt");
         return compileSend(request, sendFile);
     }
     public Map<String, Object> changePermissionLevel(String projectID, String username, String ownerID, String permissionLevel) {
         String request = String.format("username: %s %n projectID: %s %n change-permission-level: %s : %s", ownerID, projectID, username, permissionLevel);
-        File sendFile = new File("change-permission-level.txt");
+        File sendFile = new File("last-call.txt");
         return compileSend(request, sendFile);
     }
     public Map<String, Object> requestUserJson(String username) {
         String request = String.format("username: %s %n get-user-json", username);
-        File sendFile = new File("get-user-json.txt");
+        File sendFile = new File("last-call.txt");
         return compileSend(request, sendFile);
     }
     public Map<String, Object> getProjectBoards(String projectID) {
         String request = String.format("projectID: %s %n get-project-boards", projectID);
-        File sendFile = new File("get-project-boards.txt");
+        File sendFile = new File("last-call.txt");
         return compileSend(request, sendFile);
     }
     public Map<String, Object> addBoardToProject(String username /*for checking permission level */, String projectID, String boardName, String content) {
         String request = String.format("username: %s %n projectID: %s %n add-board-to-project: %s : %s", username, projectID, boardName, content);
-        File sendFile = new File("add-board-to-project.txt");
+        File sendFile = new File("last-call.txt");
         return compileSend(request, sendFile);
     }
     public Map<String, Object> loginUser(String userName, String password) {
         String request = String.format("username: %s %n login: %s", userName, password);
-        File sendFile = new File("login.txt");
+        File sendFile = new File("last-call.txt");
         return compileSend(request, sendFile);
     }
     public Map<String, Object> updateBoardSection(String username /*for checking permission level */, String projectID, String boardName, String content) {
@@ -76,32 +76,32 @@ public class httpClientCheckPoint {
     String request = "username: " + username + "\n" +
                         "projectID: " + projectID + "\n" +
                         "update-board-section: " + boardName + " : " + escapedContent;
-        File sendFile = new File("update-board-section.txt");
+        File sendFile = new File("last-call.txt");
         return compileSend(request, sendFile);
     }
     public Map<String, Object> getBoardSection(String projectID, String boardName) {
         String request = String.format("projectID: %s %n get-board-data: %s",projectID, boardName);
-        File sendFile = new File("get-board-data.txt");
+        File sendFile = new File("last-call.txt");
         return compileSend(request, sendFile);
     }
     public Map<String, Object> getUserCalendar(String username) {
         String request = String.format("username: %s %n request-user-calander",username);
-        File sendFile = new File("get-user-calendar.txt");
+        File sendFile = new File("last-call.txt");
         return compileSend(request, sendFile);
     }
     public Map<String, Object> updateUserCalendar(String username, String content) {
         String request = String.format("username: %s %n update-user-calander: %s",username, content);
-        File sendFile = new File("update-user-calendar.txt");
+        File sendFile = new File("last-call.txt");
         return compileSend(request, sendFile);
     }
     public Map<String, Object> getProjectCalendar(String projectID) {
         String request = String.format("projectID: %s %n request-project-calander",projectID);
-        File sendFile = new File("get-project-calendar.txt");
+        File sendFile = new File("last-call.txt");
         return compileSend(request, sendFile);
     }
     public Map<String, Object> updateProjectCalendar(String username, String projectID, String content) {
         String request = String.format("username: %s %n projectID: %s %n update-project-calander: %s",username, projectID, content);
-        File sendFile = new File("update-project-calendar.txt");
+        File sendFile = new File("last-call.txt");
         return compileSend(request, sendFile);
     }
     public Map<String, Object> compileSend(String request, File sendFile) {

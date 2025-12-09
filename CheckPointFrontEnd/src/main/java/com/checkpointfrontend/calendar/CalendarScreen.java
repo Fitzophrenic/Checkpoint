@@ -111,7 +111,7 @@ public class CalendarScreen extends Stage{
         this.setOnCloseRequest(event -> {
             System.out.println(CalendarJSONConverter.convertToString(calendarData));
             if(isProject) {
-                client.updateProjectCalendar(currentUser, projectID, CalendarJSONConverter.convertToString(calendarData));
+                // client.updateProjectCalendar(currentUser, projectID, CalendarJSONConverter.convertToString(calendarData));
                 return;
             }
             client.updateUserCalendar(currentUser, CalendarJSONConverter.convertToString(calendarData));
@@ -417,8 +417,54 @@ public class CalendarScreen extends Stage{
         dateJSON.getEvents().add(event);
         client.updateUserCalendar(user, CalendarJSONConverter.convertToString(userJSON));
     }
+    @SuppressWarnings("null")
+    public void addEventToProject(LocalDate date, String projectID, EventJSONFormat event){
+        String year = date.getYear() +"";
+        YearsJSONFormat userJSON = CalendarJSONConverter.convertFromMap(client.getProjectCalendar(projectID));
+        if(!checkIfYearExistsInJSON(year, userJSON)){
+            YearJSONFormat yearJSON = new YearJSONFormat();
+            yearJSON.setYearNum(year);
+            yearJSON.setMonths(new ArrayList<>());
+            userJSON.getYears().add(yearJSON);
+        }
+        YearJSONFormat yearJSONFormat = null;
+        for(YearJSONFormat yearCheck : userJSON.getYears()) {
+            if(yearCheck.getYearNum().equals(year)) {
+                yearJSONFormat = yearCheck;
+            }
+        }
+        YearMonth monthToFill = YearMonth.from(date);
+        if(!checkIfYearMonthExistsInJSON(monthToFill, yearJSONFormat)) {
+            MonthJSONFormat tmp = new MonthJSONFormat();
+            tmp.setMonthName(monthToFill.getMonth().toString());
+            tmp.setDays(new ArrayList<>());
+            yearJSONFormat.getMonths().add(tmp);
+        }
+        MonthJSONFormat monthJSONFormat = null;
+        for(MonthJSONFormat monthCheck : yearJSONFormat.getMonths()) {
+            if(monthCheck.getMonthName().equals(date.getMonth().name())) {
+                monthJSONFormat = monthCheck;
+            }
+        }
+        if(!checkIfYearMonthDayExistsInJSON(date, monthJSONFormat)) {
+            DateJSONFormat dateFormat = new DateJSONFormat();
+            dateFormat.setDate(String.valueOf(date.getDayOfMonth()));
+            dateFormat.setEvents(new ArrayList<>());
+            monthJSONFormat.getDays().add(dateFormat);
+        }
+        DateJSONFormat dateJSON = null;
+        for(DateJSONFormat dayCheck : monthJSONFormat.getDays()) {
+            if(dayCheck.getDate().equals(date.getDayOfMonth()+"")) {
+                dateJSON = dayCheck;
+            }
+        }
+        dateJSON.getEvents().add(event);
+        client.updateProjectCalendar(this.getUser(), projectID, CalendarJSONConverter.convertToString(userJSON));
+    }
     public String getUser(){
         return currentUser;
     }
-
+    public String getProject(){
+        return projectID;
+    }
 }
