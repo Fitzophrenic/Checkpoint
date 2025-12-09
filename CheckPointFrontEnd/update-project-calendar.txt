@@ -1,0 +1,3 @@
+username: ee 
+ projectID: VFI5vCwyEUZL 
+ update-project-calander: {"years":[{"yearNum":"2025","months":[{"monthName":"DECEMBER","days":[{"date":"22","events":[{"eventName":"das","timeFrame":"12:00 AM-12:00 AM","eventCol":"#b31a1a"}]}]}]}]}

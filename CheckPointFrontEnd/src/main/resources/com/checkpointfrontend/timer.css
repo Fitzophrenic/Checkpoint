@@ -1,0 +1,12 @@
+.button {
+    -fx-background-color: #18a438ff;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-padding: 5 15 5 15;
+    -fx-background-radius: 5;
+}
+
+.timerlabel {
+    -ms-flex-align: center;
+    size: 200px, 100px; /* random temp vaule */
+}
