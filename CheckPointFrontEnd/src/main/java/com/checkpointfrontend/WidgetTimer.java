@@ -33,7 +33,7 @@ public class WidgetTimer extends Widget {
     @Override
     public void convertTextToData(String content) {
         System.out.println(content);
-        String[] reputInData = content.split("⠀:");
+        String[] reputInData = content.split("⠀");
         for (String string : reputInData) {
             if (!string.isBlank() && !string.equals("Timer")) {
                 times.getItems().add(string.trim());
