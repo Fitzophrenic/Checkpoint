@@ -21,9 +21,10 @@ public class ProjectRepersentationForMainView extends HBox{
         deleteEvent = new Button("X"); 
         deleteEvent.setStyle("-fx-text-fill: white;");
         this.getChildren().addAll(eventName);
-
+        this.setOnMouseEntered(e -> this.setStyle("-fx-background-color: #3e8662ff; -fx-background-radius: 8; -fx-padding: 10; -fx-alignment: center;"));
+        this.setOnMouseExited(e -> this.setStyle("-fx-background-color: #055b27ff; -fx-background-radius: 8; -fx-padding: 10; -fx-alignment: center;"));
         this.getChildren().addAll(deleteEvent);
-        this.setStyle(String.format("-fx-background-color: #6a6a6aff; -fx-background-radius: 8; -fx-padding: 10; -fx-alignment: center;"));
+        this.setStyle(String.format("-fx-background-color: #055b27ff; -fx-background-radius: 8; -fx-padding: 10; -fx-alignment: center;"));
         deleteEvent.setOnAction(e -> {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
                             "Delete this project? / Remove yourself from this project?", 
