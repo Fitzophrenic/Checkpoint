@@ -69,11 +69,11 @@ public class httpClientCheckPoint {
         ObjectMapper mapper = new ObjectMapper();
         String escapedContent = content;
         try {
-            escapedContent = mapper.writeValueAsString(content); // converts newlines to \n, wraps in quotes
+            escapedContent = mapper.writeValueAsString(content);
         } catch (Exception ex) {
             ex.printStackTrace();
         }
-    String request = "username: " + username + "\n" +
+        String request = "username: " + username + "\n" +
                         "projectID: " + projectID + "\n" +
                         "update-board-section: " + boardName + " : " + escapedContent;
         File sendFile = new File("last-call.txt");
@@ -101,6 +101,11 @@ public class httpClientCheckPoint {
     }
     public Map<String, Object> updateProjectCalendar(String username, String projectID, String content) {
         String request = String.format("username: %s %n projectID: %s %n update-project-calander: %s",username, projectID, content);
+        File sendFile = new File("last-call.txt");
+        return compileSend(request, sendFile);
+    }
+    public Map<String, Object> requestProjectJSON(String projectID) {
+        String request = String.format("projectID: %s %n get-project-json", projectID);
         File sendFile = new File("last-call.txt");
         return compileSend(request, sendFile);
     }

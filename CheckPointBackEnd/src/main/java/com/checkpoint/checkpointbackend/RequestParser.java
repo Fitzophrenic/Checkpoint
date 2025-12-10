@@ -93,6 +93,9 @@ public class RequestParser {
                 case "get-user-json" -> { // get-user-json
                     return ResponseEntity.ok(sqlRequest.requestUserJson(username));
                 }
+                case "get-project-json" -> { // get-project
+                    return ResponseEntity.ok(sqlRequest.requestProjectJson(projectID));
+                }
                 case "add-board-to-project" -> { // add-board-to-project: boardName : content
                     sqlRequest.addBoardToProject(username, projectID, arg1, arg2);
                 }

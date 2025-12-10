@@ -198,6 +198,7 @@ public class SQLRequest {
 
         public void deleteProject(String projectID, String userID) {
             if(!checkPermissionLevel(projectID, userID).equals("o")){
+                removeUserFromProject(projectID, userID);
                 return;
             }
             String sqlRequest = "{CALL deleteProject(?)}";
@@ -315,6 +316,29 @@ public class SQLRequest {
                 if (!rs.next()) return Map.of(); // no user found
 
                 String jsonStr = rs.getString("userJSON");
+                if (jsonStr == null || jsonStr.isBlank()) return Map.of();
+
+                return mapper.readValue(
+                    jsonStr,
+                    Map.class
+                    );
+                }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Map.of("error", e.getMessage());
+        }
+    }
+    public Map<String,Object> requestProjectJson(String projectID) {
+        String sql = "SELECT projectJSON FROM Project WHERE projectID = ?";
+        ObjectMapper mapper = new ObjectMapper();
+
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, projectID);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (!rs.next()) return Map.of(); // no user found
+
+                String jsonStr = rs.getString("projectJSON");
                 if (jsonStr == null || jsonStr.isBlank()) return Map.of();
 
                 return mapper.readValue(
