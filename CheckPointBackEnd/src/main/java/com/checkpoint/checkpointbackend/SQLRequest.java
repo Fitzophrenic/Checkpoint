@@ -413,6 +413,49 @@ public class SQLRequest {
                 System.err.println("Database operation failed: " + e.getMessage());
             }
     }
+    public void deleteBoardSection(String username, String projectID, String boardName) {
+        String permission = checkPermissionLevel(projectID, username);
+        if (!(permission.equals("o") || permission.equals("w"))) {
+            return;
+        }
+        String sqlRequest = "SELECT boardsJSON FROM Project WHERE projectID = ?";
+
+        try (PreparedStatement stmt = conn.prepareStatement(sqlRequest)) {
+            stmt.setString(1, projectID);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (!rs.next()) {
+                    return;
+                }
+
+                String json = rs.getString("boardsJSON");
+                JSONProjectBoard projectBoard = projectBoardConverter.convertToEntityAttribute(json);
+
+                if (projectBoard.getSections() == null) {
+                    return;
+                }
+
+                List<JSONProjectBoardSection> sections = projectBoard.getSections();
+                boolean removed = sections.removeIf(section -> section.getBoardName().equals(boardName));
+
+                if (!removed) {
+                    return;
+                }
+
+                String updatedJson = projectBoardConverter.convertToDatabaseColumn(projectBoard);
+
+                String sqlUpdate = "UPDATE Project SET boardsJSON = ? WHERE projectID = ?";
+                try (PreparedStatement updateStmt = conn.prepareStatement(sqlUpdate)) {
+                    updateStmt.setString(1, updatedJson);
+                    updateStmt.setString(2, projectID);
+                    updateStmt.executeUpdate();
+                }
+            }
+        }
+        catch (SQLException e) {
+            System.err.println("Delete board failed: " + e.getMessage());
+        }
+    }
     public String getBoardSection(String projectID, String boardName) {
         String sqlRequest = "SELECT boardsJSON FROM Project WHERE projectID = ?";
         String contenta = null;

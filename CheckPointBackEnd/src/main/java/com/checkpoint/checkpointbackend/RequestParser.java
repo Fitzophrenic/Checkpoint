@@ -102,6 +102,9 @@ public class RequestParser {
                 case "update-board-section" -> { // update-board-section: boardName : content
                     sqlRequest.updateBoardSection(username, projectID, arg1, arg2);
                 }
+                case "delete-board-section" -> { // delete-board-section: boardName
+                    sqlRequest.deleteBoardSection(username, projectID, arg1);
+                }
                 case "get-board-data" -> {
                     String content = sqlRequest.getBoardSection(projectID, arg1);
                     response.put("content", content);

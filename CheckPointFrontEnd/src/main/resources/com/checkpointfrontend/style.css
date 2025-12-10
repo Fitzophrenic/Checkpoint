@@ -25,3 +25,14 @@
     -fx-background-color: white;
     -fx-border-color: #ccc;
 }
+
+.refresh-button {
+    -fx-background-color: rgb(14, 85, 31);
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-padding: 5 15 5 15;
+    -fx-background-radius: 5;
+}
+.refresh-button:hover {
+    -fx-background-color: rgb(26, 118, 48);
+}

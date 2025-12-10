@@ -23,7 +23,7 @@ public class WidgetTimer extends Widget {
         result.append("Timer:");
         if(!times.getItems().isEmpty()) {
             for(String time : times.getItems()) {
-                String addedItem = time + " ";
+                String addedItem = time + "⠀";
                 result.append(addedItem); // potentially adds enters which might mess with the thing
             }
         }

@@ -109,6 +109,12 @@ public class httpClientCheckPoint {
         File sendFile = new File("last-call.txt");
         return compileSend(request, sendFile);
     }
+    public Map<String, Object> deleteBoardSection(String username, String projectID, String boardName) {
+        String request = String.format("username: %s %n projectID: %s %n delete-board-section: %s",username, projectID, boardName);
+        File sendFile = new File("last-call.txt");
+        return compileSend(request, sendFile);
+    }
+
     public Map<String, Object> compileSend(String request, File sendFile) {
         CloseableHttpClient client = httpClientInstance.CLIENT;
         HttpPost post = new HttpPost("http://localhost:8080/api/files/upload");

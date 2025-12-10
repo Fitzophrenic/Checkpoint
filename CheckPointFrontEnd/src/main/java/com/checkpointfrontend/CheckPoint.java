@@ -25,6 +25,8 @@ import javafx.scene.control.SplitPane;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
@@ -34,14 +36,13 @@ public class CheckPoint extends Application {
 
     private BorderPane mainLayout;
     private SplitPane docSplitPane;
-    private ListView<String> sectionsList;
+    private ListView<SectionRepersentation> sectionsList;
     private WidgetManager sectionFocus;
     private ListView<ProjectRepersentationForMainView> boardsList;
     private String username = ""; // change later when login has it
     private String currentProjectID = "";
     private String currentProjectSection = "";
     private static final httpClientCheckPoint httpClient =  new httpClientCheckPoint();
-    private final Map<String, String> userProjects = new HashMap<>();
     private final List<Map<String, Object>> sections = new ArrayList<>();
     
     private Stage window;
@@ -170,9 +171,16 @@ public class CheckPoint extends Application {
         // Menu Bar
         Button homeButton = new Button("Checkpoint");
         homeButton.getStyleClass().add("home-button"); // CSS class
-        HBox topMenuBar = new HBox(10, homeButton);
-        topMenuBar.setStyle("-fx-padding: 10; -fx-background-color: #18a438ff;");
+        Button refreshProjects = new Button("Refresh projects");
+        refreshProjects.getStyleClass().add("refresh-button"); // CSS class
+        Button refreshSections = new Button("Refresh Sections");
+        refreshSections.getStyleClass().add("refresh-button"); // CSS class
 
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        HBox topMenuBar = new HBox(10, homeButton,spacer);
+        topMenuBar.getChildren().add(refreshProjects);
+        topMenuBar.setStyle("-fx-padding: 10; -fx-background-color: #18a438ff;");
         // Board List
         boardsList = new ListView<>();
         boardsList.getStyleClass().add("list-view");
@@ -224,16 +232,29 @@ public class CheckPoint extends Application {
                 sectionFocus.clear();
                 mainLayout.setCenter(docSplitPane);
                 currentProjectID = board.getProjectID();
+                topMenuBar.getChildren().remove(refreshProjects);
+                topMenuBar.getChildren().add(refreshSections);
                 populateSections();
             }
         });
-
+        refreshProjects.setOnAction(e -> {
+            boardsList.getItems().clear();
+            populateBoards();
+        });
+        refreshSections.setOnAction(e -> {
+            sectionsList.getItems().clear();
+            populateSections();
+        });
         homeButton.setOnAction(e -> {
+            if(!currentProjectID.equals("")) {
+                topMenuBar.getChildren().remove(refreshSections);
+                topMenuBar.getChildren().add(refreshProjects);
+            }
             mainLayout.setCenter(homeScreen);
-            String section = sectionsList.getSelectionModel().getSelectedItem();
+            SectionRepersentation section = sectionsList.getSelectionModel().getSelectedItem();
             for (Map<String, Object> sectio : sections) {
 
-                if (sectio.get("boardName").equals(section)) {
+                if (sectio.get("boardName").equals(section.getBoardName())) {
                     String text = sectionFocus.convertDataToText();
                     httpClient.updateBoardSection(username, currentProjectID, currentProjectSection, text);
 
@@ -246,8 +267,8 @@ public class CheckPoint extends Application {
         });
 
         sectionsList.setOnMouseClicked(e -> {// open NEW section
-            String section = sectionsList.getSelectionModel().getSelectedItem();
-            if (section == null || section.equals(currentProjectSection)) {
+            SectionRepersentation section = sectionsList.getSelectionModel().getSelectedItem();
+            if (section == null || section.getBoardName().equals(currentProjectSection)) {
                 return;
             }
             for (Map<String, Object> sectio : sections) {
@@ -266,13 +287,13 @@ public class CheckPoint extends Application {
 
             //sectionFocus.setPromptText("Notes for: " + section);
             sectionFocus.clear();
-            String content =httpClient.getBoardSection(currentProjectID, section).get("content").toString();
+            String content =httpClient.getBoardSection(currentProjectID, section.getBoardName()).get("content").toString();
             String multiLineContent = content.replace("\\n", "\n");
             if (multiLineContent.startsWith("\"") && multiLineContent.endsWith("\"")) {
                 multiLineContent = multiLineContent.substring(1, multiLineContent.length() - 1);
             }
             sectionFocus.determineAndUpdateWidget(multiLineContent);
-            currentProjectSection = section;
+            currentProjectSection = section.getBoardName();
         });
         openUserCalendar.setOnAction(e -> {
             new CalendarScreen(window, username, httpClient);
@@ -289,7 +310,6 @@ public class CheckPoint extends Application {
                 String projectIDtmp = (String) idRes.get("projectID");
                 boardsList.getItems().add(new ProjectRepersentationForMainView(boardName, this, projectIDtmp));
 
-                userProjects.put(boardName, projectIDtmp);
                 
             }
         });
@@ -298,7 +318,7 @@ public class CheckPoint extends Application {
             String sectionName = newSectionField.getText().trim();
             Map<String, Object> mapTmpOnly = new HashMap<>();
             if (!sectionName.isEmpty() && !sectionsList.getItems().contains(sectionName)) {
-                sectionsList.getItems().add(sectionName);
+                sectionsList.getItems().add(new SectionRepersentation(sectionName, this, currentProjectID));
                 newSectionField.clear();
                 httpClient.addBoardToProject(username, currentProjectID, sectionName, "Board:");
                 mapTmpOnly.put("boardName", sectionName);
@@ -310,7 +330,7 @@ public class CheckPoint extends Application {
             String sectionName = newSectionField.getText().trim();
             Map<String, Object> mapTmpOnly = new HashMap<>();
             if (!sectionName.isEmpty() && !sectionsList.getItems().contains(sectionName)) {
-                sectionsList.getItems().add(sectionName);
+                sectionsList.getItems().add(new SectionRepersentation(sectionName, this, currentProjectID));
                 newSectionField.clear();
                 httpClient.addBoardToProject(username, currentProjectID, sectionName, "Timer:");
                 mapTmpOnly.put("boardName", sectionName);
@@ -321,12 +341,14 @@ public class CheckPoint extends Application {
         shareProjectButton.setOnAction(e -> {
             ShareProject shareProjectStage = new ShareProject(window, username, currentProjectID, httpClient);
         });
-                populateBoards();
+        populateBoards();
 
     }
     @SuppressWarnings("unchecked")
-    private void populateSections() {
+    public void populateSections() {
         sections.clear();
+        sectionsList.getItems().clear();
+
         Map<String, Object> boardMap = httpClient.getProjectBoards(currentProjectID);
         Object obj = boardMap.get("sections");
         if(!(obj instanceof ArrayList<?>)) {
@@ -342,7 +364,7 @@ public class CheckPoint extends Application {
         }
         for (Map<String, Object> section : sections) {
             String boardName = section.get("boardName") != null ? section.get("boardName").toString() : "";
-            sectionsList.getItems().add(boardName);
+            sectionsList.getItems().add(new SectionRepersentation(boardName, this, currentProjectID));
         }
         System.out.println(boardContent);
     }
@@ -363,7 +385,6 @@ public class CheckPoint extends Application {
                 String projectName = map.get("projectName") != null ? map.get("projectName").toString() : "";
                 String projectID = map.get("projectID") != null ? map.get("projectID").toString() : "";
 
-                userProjects.put(projectName, projectID);
                 boardsList.getItems().add(new ProjectRepersentationForMainView(projectName, this, projectID));
 
             } else {
@@ -410,6 +431,9 @@ public class CheckPoint extends Application {
     }
     public ListView<ProjectRepersentationForMainView> getBoardsList() {
         return boardsList;
+    }
+    public ListView<SectionRepersentation> getSectionsList() {
+        return sectionsList;
     }
     public httpClientCheckPoint getHttpClient() {
         return httpClient;
