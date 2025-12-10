@@ -142,71 +142,81 @@ BEGIN
 
 END$$
 
-CREATE PROCEDURE removeUserFromProject(in projectIDvar VARCHAR(20), usernamevar VARCHAR(20))
-deterministic
+CREATE PROCEDURE removeUserFromProject(
+    IN projectIDvar VARCHAR(20), 
+    IN usernamevar VARCHAR(20)
+)
+DETERMINISTIC
 BEGIN
-	DECLARE projectData JSON;
-	DECLARE userJSONData JSON;
-	DECLARE currentProjectID varchar(12);
-	DECLARE currentusername VARCHAR(20);
-	DECLARE i INT default 0;
-	DECLARE numberOfProjects INT DEFAULT 0;
-	DECLARE usersWithAccess INT DEFAULT 0;
+    DECLARE projectData JSON;
+    DECLARE userJSONData JSON;
+    DECLARE currentProjectID VARCHAR(20);
+    DECLARE currentusername VARCHAR(20);
+    DECLARE i INT DEFAULT 0;
+    DECLARE numberOfProjects INT DEFAULT 0;
+    DECLARE usersWithAccess INT DEFAULT 0;
 
     SELECT projectJSON INTO projectData
     FROM Project
-    WHERE ProjectID = projectIDvar;
-    
-	SELECT userJSON INTO userJSONData
-    FROM appUser
-	WHERE username = usernamevar;
-    
+    WHERE projectID = projectIDvar;
+
     IF projectData IS NULL THEN
         SIGNAL SQLSTATE '45000'
             SET MESSAGE_TEXT = 'Project not found — cannot work on it.';
     END IF;
-    
-	SELECT JSON_LENGTH(userJSONData, '$.projects') INTO numberOfProjects;
-	SELECT JSON_LENGTH(projectData, '$.users') INTO usersWithAccess;
 
-	remove_obj: LOOP
-		
-        IF i >= numberOfProjects OR numberOfProjects IS NULL THEN
-            LEAVE remove_obj; 
-		END IF;
-        
-		SELECT JSON_UNQUOTE(JSON_EXTRACT(userJSONData, CONCAT('$.projects[', i, '].projectID')))
-		INTO currentProjectID;
+    SELECT userJSON INTO userJSONData
+    FROM appUser
+    WHERE username = usernamevar;
 
-		IF currentProjectID = projectIDvar THEN
-			SET userJSONData = JSON_REMOVE(userJSONData, CONCAT('$.projects[', i, ']'));
-			UPDATE appUser SET userJSON = userJSONData WHERE username = usernamevar;
-			LEAVE remove_obj;
-		END IF;
-            
-		SET i = i + 1;
+    IF userJSONData IS NULL THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'User not found — cannot work on it.';
+    END IF;
 
-	END LOOP remove_obj;
-    
-    SET i =0;
-    
-	remove_user: LOOP
-		IF i >= usersWithAccess OR usersWithAccess IS NULL THEN
-            LEAVE remove_user; 
-		END IF;
-        
-        SELECT JSON_UNQUOTE(JSON_EXTRACT(userJSONData, CONCAT('$.users[', i, '].username')))
-		INTO currentusername;
+    SELECT COALESCE(JSON_LENGTH(userJSONData, '$.projects'), 0) INTO numberOfProjects;
 
-		IF currentusername = usernamevar THEN
-			SET projectData = JSON_REMOVE(userJSONData, CONCAT('$.users[', i, ']'));
-			UPDATE project SET projectJSON = projectData WHERE projectID = projectIDvar;
-			LEAVE remove_user;
-		END IF;
-            
-		SET i = i + 1;
-        
-	END LOOP remove_user;
+    SET i = 0;
+    remove_project_from_user: LOOP
+        IF i >= numberOfProjects THEN
+            LEAVE remove_project_from_user;
+        END IF;
+
+        SELECT JSON_UNQUOTE(JSON_EXTRACT(userJSONData, CONCAT('$.projects[', i, '].projectID')))
+        INTO currentProjectID;
+
+        IF currentProjectID = projectIDvar THEN
+            SET userJSONData = JSON_REMOVE(userJSONData, CONCAT('$.projects[', i, ']'));
+            UPDATE appUser 
+            SET userJSON = userJSONData 
+            WHERE username = usernamevar;
+            LEAVE remove_project_from_user;
+        END IF;
+
+        SET i = i + 1;
+    END LOOP remove_project_from_user;
+
+    SELECT COALESCE(JSON_LENGTH(projectData, '$.users'), 0) INTO usersWithAccess;
+
+    SET i = 0;
+    remove_user_from_project: LOOP
+        IF i >= usersWithAccess THEN
+            LEAVE remove_user_from_project;
+        END IF;
+
+        SELECT JSON_UNQUOTE(JSON_EXTRACT(projectData, CONCAT('$.users[', i, '].username')))
+        INTO currentusername;
+
+        IF currentusername = usernamevar THEN
+            SET projectData = JSON_REMOVE(projectData, CONCAT('$.users[', i, ']'));
+            UPDATE Project 
+            SET projectJSON = projectData 
+            WHERE projectID = projectIDvar;
+            LEAVE remove_user_from_project;
+        END IF;
+
+        SET i = i + 1;
+    END LOOP remove_user_from_project;
 
 END$$
 
