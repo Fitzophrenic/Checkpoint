@@ -24,6 +24,8 @@ public class WidgetManager extends Region {
         this.getChildren().add(currentWidget);
     }
 
+    //updates widget by new instance
+    //@param content in format type:content
     public void determineAndUpdateWidget(String content) {
         clear();
         String type = content.substring(0, content.indexOf(':'));
